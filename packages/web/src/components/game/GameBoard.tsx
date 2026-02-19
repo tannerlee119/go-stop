@@ -23,9 +23,9 @@ export function GameBoard({ state }: GameBoardProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-jade-dark">
-      {/* Opponents */}
+      {/* Opponents + deck */}
       <div className="flex-shrink-0 border-b border-white/10 bg-black/20 px-4 py-3">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+        <div className="mx-auto flex max-w-6xl items-start gap-3">
           {opponents.map((opp, i) => (
             <OpponentBar
               key={opp.id}
@@ -36,25 +36,23 @@ export function GameBoard({ state }: GameBoardProps) {
           ))}
 
           {/* Deck info */}
-          <div className="flex flex-col items-center gap-1 text-white/60">
-            <span className="text-xs uppercase tracking-wide">Stock</span>
+          <div className="flex flex-col items-center gap-1 self-center rounded-lg bg-white/5 px-4 py-3 text-white/60">
+            <span className="text-[10px] uppercase tracking-wide">Stock</span>
             <span className="text-lg font-bold">{state.deckSize}</span>
           </div>
         </div>
       </div>
 
-      {/* Middle area: table + score */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-4">
+      {/* Middle area: table */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-3">
         <TurnIndicator state={state} isMyTurn={isMyTurn} />
 
-        {/* Go Declaration Toast */}
         {lastGoDeclaration && (
           <div className="animate-slide-up rounded-full bg-gold px-6 py-2 text-sm font-bold text-white shadow-lg">
             {lastGoDeclaration.playerName} declared GO! (×{lastGoDeclaration.goCount})
           </div>
         )}
 
-        {/* Special Events Toast */}
         {specialEvents.length > 0 && (
           <div className="flex gap-2">
             {specialEvents.slice(-3).map((evt, i) => (
@@ -68,11 +66,14 @@ export function GameBoard({ state }: GameBoardProps) {
           </div>
         )}
 
-        {/* Table */}
         <TableLayout state={state} />
+      </div>
 
-        {/* My score */}
-        {myPlayer && <ScorePanel player={myPlayer} />}
+      {/* My captures panel */}
+      <div className="flex-shrink-0 border-t border-white/10 bg-black/10 px-4 py-2">
+        <div className="mx-auto max-w-6xl">
+          {myPlayer && <ScorePanel player={myPlayer} />}
+        </div>
       </div>
 
       {/* My hand */}
@@ -80,7 +81,6 @@ export function GameBoard({ state }: GameBoardProps) {
         <PlayerHand state={state} />
       </div>
 
-      {/* Go/Stop Modal */}
       {showGoStop && <GoStopModal state={state} />}
     </div>
   );

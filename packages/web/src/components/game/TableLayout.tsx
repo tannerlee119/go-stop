@@ -83,13 +83,13 @@ export function TableLayout({ state }: TableLayoutProps) {
           {state.turnState.handCard && (
             <div className="text-center">
               <p className="mb-1 text-xs text-white/50">Played</p>
-              <HwatuCard card={state.turnState.handCard} disabled small />
+              <HwatuCard card={state.turnState.handCard} disabled size="sm" />
             </div>
           )}
           {state.turnState.stockCard && (
             <div className="text-center">
               <p className="mb-1 text-xs text-white/50">Drawn</p>
-              <HwatuCard card={state.turnState.stockCard} disabled small />
+              <HwatuCard card={state.turnState.stockCard} disabled size="sm" />
             </div>
           )}
         </div>
