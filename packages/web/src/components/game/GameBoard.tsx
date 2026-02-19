@@ -5,7 +5,7 @@ import type { ClientGameState, Month } from "@go-stop/shared";
 import { PlayerHand } from "./PlayerHand";
 import { TableLayout } from "./TableLayout";
 import { OpponentBar } from "./OpponentBar";
-import { ScorePanel } from "./ScorePanel";
+import { CapturedCardsPanel } from "./CapturedCardsPanel";
 import { GoStopModal } from "./GoStopModal";
 import { TurnIndicator } from "./TurnIndicator";
 import { useGameStore } from "@/stores/game-store";
@@ -134,47 +134,58 @@ export function GameBoard({ state, showResultsBanner, onResultsBannerClick }: Ga
         </div>
       </div>
 
-      {/* Middle area: table */}
+      {/* Middle area: table + captures side by side */}
       <div
         data-drop-board
-        className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-4 py-3"
+        className="flex min-h-0 flex-1 items-center justify-center gap-4 px-4 py-3"
       >
-        <TurnIndicator
-          state={state}
-          isMyTurn={isMyTurn}
-          onClick={turnIndicatorClick}
-          labelOverride={showResultsBanner ? "Game Over — View Results" : undefined}
-        />
-
-        {lastGoDeclaration && (
-          <div className="animate-slide-up rounded-full bg-gold px-6 py-2 text-sm font-bold text-white shadow-lg">
-            {lastGoDeclaration.playerName} declared GO! (×{lastGoDeclaration.goCount})
+        {/* Left: compact captures sidebar */}
+        {myPlayer && (
+          <div className="flex w-56 flex-shrink-0 flex-col gap-1 self-stretch overflow-y-auto rounded-xl bg-black/15 px-2 py-2">
+            <span className="text-[9px] font-medium uppercase tracking-wide text-white/40">
+              My Captures
+            </span>
+            <CapturedCardsPanel
+              captured={myPlayer.captured}
+              score={myPlayer.score}
+              goCount={myPlayer.goCount}
+              compact
+            />
           </div>
         )}
 
-        {specialEvents.length > 0 && (
-          <div className="flex gap-2">
-            {specialEvents.slice(-3).map((evt, i) => (
-              <div
-                key={i}
-                className="animate-slide-up rounded-full bg-crimson/90 px-4 py-1.5 text-xs font-bold text-white"
-              >
-                {evt.type.toUpperCase()}
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Right: turn info + table stacks */}
+        <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-3">
+          <TurnIndicator
+            state={state}
+            isMyTurn={isMyTurn}
+            onClick={turnIndicatorClick}
+            labelOverride={showResultsBanner ? "Game Over — View Results" : undefined}
+          />
 
-        <TableLayout
-          state={state}
-          draggingMonth={draggingCard?.month ?? null}
-        />
-      </div>
+          {lastGoDeclaration && (
+            <div className="animate-slide-up rounded-full bg-gold px-6 py-2 text-sm font-bold text-white shadow-lg">
+              {lastGoDeclaration.playerName} declared GO! (×{lastGoDeclaration.goCount})
+            </div>
+          )}
 
-      {/* My captures panel */}
-      <div className="flex-shrink-0 border-t border-white/10 bg-black/10 px-4 py-2">
-        <div className="mx-auto max-h-[140px] max-w-6xl overflow-y-auto">
-          {myPlayer && <ScorePanel player={myPlayer} />}
+          {specialEvents.length > 0 && (
+            <div className="flex gap-2">
+              {specialEvents.slice(-3).map((evt, i) => (
+                <div
+                  key={i}
+                  className="animate-slide-up rounded-full bg-crimson/90 px-4 py-1.5 text-xs font-bold text-white"
+                >
+                  {evt.type.toUpperCase()}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <TableLayout
+            state={state}
+            draggingMonth={draggingCard?.month ?? null}
+          />
         </div>
       </div>
 
