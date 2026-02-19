@@ -170,6 +170,21 @@ export class GameRoom {
     return { success: true };
   }
 
+  restartGame(): { success: boolean; error?: string } {
+    if (!this.gameState || this.gameState.phase !== "finished") {
+      return { success: false, error: "Game is not finished" };
+    }
+
+    this.gameState = createGameState(
+      this.players.map((p) => ({ id: p.id, name: p.name, isBot: p.isBot })),
+      this.configOverrides,
+    );
+
+    this.emittedEventCount = 0;
+    this.beginDeal();
+    return { success: true };
+  }
+
   private beginDeal(): void {
     if (!this.gameState) return;
 

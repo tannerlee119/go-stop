@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useGameStore } from "@/stores/game-store";
 import { WaitingRoom } from "@/components/lobby/WaitingRoom";
@@ -13,6 +13,7 @@ export default function RoomPage() {
   const roomId = params.id as string;
   const { room, gameState, gameOver, connected, joinRoom, playerName } =
     useGameStore();
+  const [gameOverCollapsed, setGameOverCollapsed] = useState(false);
 
   useEffect(() => {
     if (connected && !room) {
@@ -25,6 +26,11 @@ export default function RoomPage() {
       router.push("/");
     }
   }, [connected, playerName, router]);
+
+  // Reset collapsed state when gameOver changes (new game started or game over dismissed)
+  useEffect(() => {
+    if (!gameOver) setGameOverCollapsed(false);
+  }, [gameOver]);
 
   if (!room) {
     return (
@@ -43,8 +49,17 @@ export default function RoomPage() {
 
   return (
     <>
-      {gameState && <GameBoard state={gameState} />}
-      {gameOver && <GameOverModal data={gameOver} />}
+      {gameState && (
+        <GameBoard
+          state={gameState}
+          showResultsBanner={gameOver != null && gameOverCollapsed}
+          onResultsBannerClick={() => setGameOverCollapsed(false)}
+        />
+      )}
+      {gameOver && !gameOverCollapsed && (
+        <GameOverModal data={gameOver} onCollapse={() => setGameOverCollapsed(true)} />
+      )}
     </>
   );
 }
+

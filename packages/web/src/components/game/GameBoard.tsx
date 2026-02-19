@@ -12,9 +12,11 @@ import { useGameStore } from "@/stores/game-store";
 
 interface GameBoardProps {
   state: ClientGameState;
+  showResultsBanner?: boolean;
+  onResultsBannerClick?: () => void;
 }
 
-export function GameBoard({ state }: GameBoardProps) {
+export function GameBoard({ state, showResultsBanner, onResultsBannerClick }: GameBoardProps) {
   const { lastGoDeclaration, specialEvents, sendAction } = useGameStore();
   const myPlayer = state.players.find((p) => p.id === state.myId);
   const opponents = state.players.filter((p) => p.id !== state.myId);
@@ -43,6 +45,7 @@ export function GameBoard({ state }: GameBoardProps) {
     const elements = document.elementsFromPoint(pointerX, pointerY);
     const stackTarget = elements.find((el) => el.hasAttribute("data-drop-month"));
     const emptyTarget = elements.find((el) => el.hasAttribute("data-drop-empty"));
+    const boardTarget = elements.find((el) => el.hasAttribute("data-drop-board"));
 
     if (stackTarget) {
       const month = Number(stackTarget.getAttribute("data-drop-month")) as Month;
@@ -56,13 +59,21 @@ export function GameBoard({ state }: GameBoardProps) {
       } else {
         sendAction({ type: "play-card", cardId: draggingCard.cardId });
       }
-    } else if (emptyTarget) {
+    } else if (emptyTarget || boardTarget) {
+      // Drop on empty target or anywhere on the board area
       sendAction({ type: "play-card", cardId: draggingCard.cardId });
     }
-    // If neither target hit, the card snaps back without playing
+    // If dropped outside the board entirely (e.g. on hand area), card snaps back
 
     setDraggingCard(null);
   }, [draggingCard, state.tableStacks, sendAction]);
+
+  // Determine if the turn indicator should be clickable
+  const turnIndicatorClick = goStopCollapsed
+    ? () => setGoStopCollapsed(false)
+    : showResultsBanner
+      ? onResultsBannerClick
+      : undefined;
 
   return (
     <div className="flex min-h-screen flex-col bg-jade-dark">
@@ -87,11 +98,15 @@ export function GameBoard({ state }: GameBoardProps) {
       </div>
 
       {/* Middle area: table */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-3">
+      <div
+        data-drop-board
+        className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-3"
+      >
         <TurnIndicator
           state={state}
           isMyTurn={isMyTurn}
-          onClick={goStopCollapsed ? () => setGoStopCollapsed(false) : undefined}
+          onClick={turnIndicatorClick}
+          labelOverride={showResultsBanner ? "Game Over — View Results" : undefined}
         />
 
         {lastGoDeclaration && (
@@ -141,3 +156,4 @@ export function GameBoard({ state }: GameBoardProps) {
     </div>
   );
 }
+

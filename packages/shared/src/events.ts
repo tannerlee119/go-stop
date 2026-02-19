@@ -15,6 +15,7 @@ export interface ClientToServerEvents {
   "room:leave": () => void;
   "room:add-bot": (callback: (result: { success: boolean; error?: string }) => void) => void;
   "room:start": (callback: (result: { success: boolean; error?: string }) => void) => void;
+  "room:restart": (callback: (result: { success: boolean; error?: string }) => void) => void;
   "room:list": (callback: (rooms: RoomInfo[]) => void) => void;
   "game:action": (action: GameAction, callback: (result: { success: boolean; error?: string }) => void) => void;
 }

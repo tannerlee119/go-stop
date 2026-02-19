@@ -27,6 +27,7 @@ interface GameStore {
   gameOver: GameOverData | null;
   specialEvents: SpecialEvent[];
   lastGoDeclaration: { playerName: string; goCount: number } | null;
+  cumulativeChips: Record<string, number>;
 
   connect: (playerName: string) => void;
   disconnect: () => void;
@@ -35,6 +36,7 @@ interface GameStore {
   leaveRoom: () => void;
   addBot: () => Promise<boolean>;
   startGame: () => Promise<boolean>;
+  restartGame: () => Promise<boolean>;
   sendAction: (action: GameAction) => Promise<boolean>;
   listRooms: () => Promise<RoomInfo[]>;
   clearGameOver: () => void;
@@ -51,6 +53,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   gameOver: null,
   specialEvents: [],
   lastGoDeclaration: null,
+  cumulativeChips: {},
 
   connect: (playerName: string) => {
     if (typeof window === "undefined") return;
@@ -79,7 +82,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       });
 
       socket.on("game:over", (data) => {
-        set({ gameOver: data });
+        set((s) => {
+          const chips = { ...s.cumulativeChips };
+          for (const [pid, payment] of Object.entries(data.payments)) {
+            chips[pid] = (chips[pid] ?? 0) + payment;
+          }
+          return { gameOver: data, cumulativeChips: chips };
+        });
       });
 
       socket.on("game:special-event", (event) => {
@@ -110,6 +119,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       room: null,
       gameState: null,
       gameOver: null,
+      cumulativeChips: {},
     });
   },
 
@@ -151,7 +161,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (socket) {
       socket.emit("room:leave");
     }
-    set({ room: null, gameState: null, gameOver: null });
+    set({ room: null, gameState: null, gameOver: null, cumulativeChips: {} });
   },
 
   addBot: async () => {
@@ -173,6 +183,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
       socket.emit("room:start", (result) => {
         if (!result.success) {
           set({ roomError: result.error ?? "Failed to start" });
+        }
+        resolve(result.success);
+      });
+    });
+  },
+
+  restartGame: async () => {
+    const { socket } = get();
+    if (!socket) return false;
+
+    return new Promise((resolve) => {
+      socket.emit("room:restart", (result) => {
+        if (result.success) {
+          set({ gameOver: null, specialEvents: [] });
+        } else {
+          console.error("[restart error]", result.error);
         }
         resolve(result.success);
       });

@@ -121,6 +121,17 @@ export function registerSocketHandlers(
     callback(result);
   });
 
+  socket.on("room:restart", (callback) => {
+    const room = socket.data.roomId ? roomManager.getRoom(socket.data.roomId) : null;
+    if (!room) {
+      callback({ success: false, error: "Not in a room" });
+      return;
+    }
+
+    const result = room.restartGame();
+    callback(result);
+  });
+
   // ─── Game Actions ────────────────────────────────────────────────
 
   socket.on("game:action", (action, callback) => {

@@ -6,6 +6,7 @@ interface TurnIndicatorProps {
   state: ClientGameState;
   isMyTurn: boolean;
   onClick?: () => void;
+  labelOverride?: string;
 }
 
 const PHASE_LABELS: Record<string, string> = {
@@ -18,7 +19,7 @@ const PHASE_LABELS: Record<string, string> = {
   finished: "Game Over",
 };
 
-export function TurnIndicator({ state, isMyTurn, onClick }: TurnIndicatorProps) {
+export function TurnIndicator({ state, isMyTurn, onClick, labelOverride }: TurnIndicatorProps) {
   const currentPlayer = state.players[state.currentPlayerIndex];
   if (!currentPlayer) return null;
 
@@ -31,7 +32,7 @@ export function TurnIndicator({ state, isMyTurn, onClick }: TurnIndicatorProps) 
         role={isClickable ? "button" : undefined}
         onClick={onClick}
         className={`inline-block rounded-full px-5 py-1.5 text-sm font-medium shadow
-          ${isMyTurn
+          ${isMyTurn || labelOverride
             ? "bg-gold text-white animate-pulse-glow"
             : "bg-white/10 text-white/70"
           }
@@ -40,7 +41,9 @@ export function TurnIndicator({ state, isMyTurn, onClick }: TurnIndicatorProps) 
             : ""
           }`}
       >
-        {isMyTurn ? (
+        {labelOverride ? (
+          labelOverride
+        ) : isMyTurn ? (
           <>Your turn — {phaseLabel}</>
         ) : (
           <>{currentPlayer.name}&apos;s turn</>

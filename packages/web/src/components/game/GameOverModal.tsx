@@ -14,22 +14,22 @@ interface GameOverData {
 
 interface GameOverModalProps {
   data: GameOverData;
+  onCollapse: () => void;
 }
 
-export function GameOverModal({ data }: GameOverModalProps) {
+export function GameOverModal({ data, onCollapse }: GameOverModalProps) {
   const router = useRouter();
-  const { clearGameOver, leaveRoom, gameState } = useGameStore();
+  const { restartGame, leaveRoom, gameState, cumulativeChips } = useGameStore();
 
   const players = gameState?.players ?? [];
   const myId = gameState?.myId;
   const isWinner = data.winnerId === myId;
 
   function handlePlayAgain() {
-    clearGameOver();
+    restartGame();
   }
 
   function handleLeave() {
-    clearGameOver();
     leaveRoom();
     router.push("/");
   }
@@ -69,6 +69,7 @@ export function GameOverModal({ data }: GameOverModalProps) {
           {players.map((player) => {
             const score = data.scores[player.id];
             const payment = data.payments[player.id] ?? 0;
+            const cumulative = cumulativeChips[player.id] ?? 0;
             const isMe = player.id === myId;
 
             return (
@@ -95,17 +96,22 @@ export function GameOverModal({ data }: GameOverModalProps) {
                   <p className="text-lg font-bold text-ink">
                     {score?.total ?? 0} pts
                   </p>
-                  <p
-                    className={`text-sm font-medium ${
-                      payment > 0
-                        ? "text-jade"
-                        : payment < 0
-                          ? "text-crimson"
-                          : "text-ink-light"
-                    }`}
-                  >
-                    {payment > 0 ? `+${payment}` : payment} chips
-                  </p>
+                  <div className="flex items-center gap-2 justify-end">
+                    <span
+                      className={`text-sm font-medium ${payment > 0
+                          ? "text-jade"
+                          : payment < 0
+                            ? "text-crimson"
+                            : "text-ink-light"
+                        }`}
+                    >
+                      {payment > 0 ? `+${payment}` : payment} chips
+                    </span>
+                    <span className={`text-xs ${cumulative > 0 ? "text-jade" : cumulative < 0 ? "text-crimson" : "text-ink-light"
+                      }`}>
+                      (total: {cumulative > 0 ? `+${cumulative}` : cumulative})
+                    </span>
+                  </div>
                 </div>
               </div>
             );
@@ -129,7 +135,16 @@ export function GameOverModal({ data }: GameOverModalProps) {
             Leave
           </button>
         </div>
+
+        <button
+          onClick={onCollapse}
+          className="mt-4 w-full rounded-lg border border-ink/10 py-2.5 text-sm font-medium text-ink-light
+                   transition-all hover:bg-ink/5 active:scale-[0.98]"
+        >
+          See Board
+        </button>
       </motion.div>
     </div>
   );
 }
+
