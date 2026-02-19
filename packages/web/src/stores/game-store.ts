@@ -16,22 +16,18 @@ interface GameOverData {
 }
 
 interface GameStore {
-  // Connection
   socket: GameSocket | null;
   connected: boolean;
   playerName: string;
 
-  // Room
   room: RoomInfo | null;
   roomError: string | null;
 
-  // Game
   gameState: ClientGameState | null;
   gameOver: GameOverData | null;
   specialEvents: SpecialEvent[];
   lastGoDeclaration: { playerName: string; goCount: number } | null;
 
-  // Actions
   connect: (playerName: string) => void;
   disconnect: () => void;
   createRoom: (maxPlayers: number) => Promise<RoomInfo | null>;
@@ -57,49 +53,52 @@ export const useGameStore = create<GameStore>((set, get) => ({
   lastGoDeclaration: null,
 
   connect: (playerName: string) => {
-    const socket = connectSocket();
-    set({ socket, playerName });
+    if (typeof window === "undefined") return;
 
-    socket.on("connect", () => {
-      set({ connected: true });
-    });
+    connectSocket().then((socket) => {
+      set({ socket, playerName });
 
-    socket.on("disconnect", () => {
-      set({ connected: false });
-    });
-
-    socket.on("room:updated", (room) => {
-      set({ room });
-    });
-
-    socket.on("room:closed", () => {
-      set({ room: null, gameState: null });
-    });
-
-    socket.on("game:state", (state) => {
-      set({ gameState: state });
-    });
-
-    socket.on("game:over", (data) => {
-      set({ gameOver: data });
-    });
-
-    socket.on("game:special-event", (event) => {
-      set((s) => ({ specialEvents: [...s.specialEvents, event] }));
-    });
-
-    socket.on("game:go-declared", (data) => {
-      set({
-        lastGoDeclaration: {
-          playerName: data.playerName,
-          goCount: data.goCount,
-        },
+      socket.on("connect", () => {
+        set({ connected: true });
       });
-      setTimeout(() => set({ lastGoDeclaration: null }), 2000);
-    });
 
-    socket.on("error", (message) => {
-      console.error("[server error]", message);
+      socket.on("disconnect", () => {
+        set({ connected: false });
+      });
+
+      socket.on("room:updated", (room) => {
+        set({ room });
+      });
+
+      socket.on("room:closed", () => {
+        set({ room: null, gameState: null });
+      });
+
+      socket.on("game:state", (state) => {
+        set({ gameState: state });
+      });
+
+      socket.on("game:over", (data) => {
+        set({ gameOver: data });
+      });
+
+      socket.on("game:special-event", (event) => {
+        set((s) => ({ specialEvents: [...s.specialEvents, event] }));
+      });
+
+      socket.on("game:go-declared", (data) => {
+        set({
+          lastGoDeclaration: {
+            playerName: data.playerName,
+            goCount: data.goCount,
+          },
+        });
+        setTimeout(() => set({ lastGoDeclaration: null }), 2000);
+      });
+
+      socket.on("error", (message) => {
+        console.error("[server error]", message);
+      });
     });
   },
 
