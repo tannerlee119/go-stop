@@ -4,7 +4,7 @@ import type { ClientGameState, Month } from "@go-stop/shared";
 import { motion, type PanInfo } from "framer-motion";
 import { HwatuCard } from "./HwatuCard";
 import { useGameStore } from "@/stores/game-store";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 
 interface PlayerHandProps {
   state: ClientGameState;
@@ -14,6 +14,7 @@ interface PlayerHandProps {
 
 export function PlayerHand({ state, onDragStart, onDragEnd }: PlayerHandProps) {
   const { sendAction } = useGameStore();
+  const wasDragging = useRef(false);
 
   const isMyTurn = state.players[state.currentPlayerIndex]?.id === state.myId;
   const canPlay =
@@ -24,6 +25,10 @@ export function PlayerHand({ state, onDragStart, onDragEnd }: PlayerHandProps) {
     isMyTurn && state.validActions.includes("skip-hand");
 
   function handleCardClick(cardId: string) {
+    if (wasDragging.current) {
+      wasDragging.current = false;
+      return;
+    }
     if (!canPlay) return;
     sendAction({ type: "play-card", cardId });
   }
@@ -34,6 +39,7 @@ export function PlayerHand({ state, onDragStart, onDragEnd }: PlayerHandProps) {
   }
 
   const handleDragStart = useCallback((cardId: string, month: Month) => {
+    wasDragging.current = true;
     onDragStart?.(cardId, month);
   }, [onDragStart]);
 
