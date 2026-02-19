@@ -276,7 +276,7 @@ export class GameRoom {
 
       this.gameState = resolveDrawnStock(this.gameState);
       this.postStateUpdate();
-    }, 1500);
+    }, 2500);
   }
 
   private handleGameOver(): void {

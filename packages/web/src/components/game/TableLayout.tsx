@@ -42,7 +42,59 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
       )}
 
       <div className="flex items-center justify-center gap-6">
-        {/* Table stacks */}
+        {/* ── Stock / Draw Pile ── */}
+        <div className="flex flex-col items-center gap-1.5">
+          <span className="text-[10px] uppercase tracking-widest text-white/40">
+            Stock
+          </span>
+
+          <div className="relative">
+            {/* Stacked card backs to show depth */}
+            {state.deckSize > 2 && (
+              <div className="absolute top-[3px] left-[3px]">
+                <HwatuCard
+                  card={{ id: "__pile3", month: 1, type: "junk", name: "", flower: "", faceUp: false } as any}
+                  faceDown
+                  size="lg"
+                  disabled
+                />
+              </div>
+            )}
+            {state.deckSize > 1 && (
+              <div className="absolute top-[1.5px] left-[1.5px]">
+                <HwatuCard
+                  card={{ id: "__pile2", month: 1, type: "junk", name: "", flower: "", faceUp: false } as any}
+                  faceDown
+                  size="lg"
+                  disabled
+                />
+              </div>
+            )}
+            {state.deckSize > 0 ? (
+              <div className="relative">
+                <HwatuCard
+                  card={{ id: "__pile1", month: 1, type: "junk", name: "", flower: "", faceUp: false } as any}
+                  faceDown
+                  size="lg"
+                  disabled
+                />
+              </div>
+            ) : (
+              <div className="flex h-[108px] w-[72px] items-center justify-center rounded-lg border-2 border-dashed border-white/15 text-[10px] text-white/25">
+                Empty
+              </div>
+            )}
+
+            {/* Count badge */}
+            {state.deckSize > 0 && (
+              <div className="absolute -top-1.5 -right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-jade text-[11px] font-bold text-white shadow-lg">
+                {state.deckSize}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Table Stacks ── */}
         <div className="flex flex-wrap items-center justify-center gap-3">
           {state.tableStacks.map((stack) => {
             const isDropTarget = matchingMonths.includes(stack.month);
@@ -50,9 +102,8 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
               <div
                 key={`stack-${stack.month}`}
                 data-drop-month={stack.month}
-                className={`relative flex flex-col items-center rounded-lg transition-all ${
-                  isDropTarget ? "ring-2 ring-gold/70 bg-gold/10 scale-105" : ""
-                }`}
+                className={`relative flex flex-col items-center rounded-lg transition-all ${isDropTarget ? "ring-2 ring-gold/70 bg-gold/10 scale-105" : ""
+                  }`}
               >
                 <div className="relative">
                   {stack.cards.map((card, cardIdx) => {
@@ -112,7 +163,7 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
           )}
         </div>
 
-        {/* Turn state info — to the right of table */}
+        {/* ── Turn state info — played / drawn cards ── */}
         <AnimatePresence>
           {hasTurnInfo && (
             <motion.div
@@ -129,19 +180,32 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
               )}
               {state.turnState.stockCard && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.7, rotateY: 90 }}
-                  animate={{ opacity: 1, scale: isDrawPhase ? 1.1 : 1, rotateY: 0 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 18 }}
+                  initial={{ opacity: 0, x: -80, y: 0, scale: 0.5, rotateY: 180 }}
+                  animate={{
+                    opacity: 1,
+                    x: 0,
+                    y: 0,
+                    scale: isDrawPhase ? 1.15 : 1,
+                    rotateY: 0,
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 120,
+                    damping: 16,
+                    mass: 0.8,
+                  }}
                   className="text-center"
                 >
                   <p className={`mb-1 text-[10px] font-medium ${isDrawPhase ? "text-gold animate-pulse" : "text-white/50"}`}>
-                    {isDrawPhase ? "Stock Draw" : "Drawn"}
+                    {isDrawPhase ? "Stock Draw!" : "Drawn"}
                   </p>
-                  <HwatuCard
-                    card={state.turnState.stockCard}
-                    disabled
-                    size={isDrawPhase ? "md" : "sm"}
-                  />
+                  <div className={`transition-all duration-300 ${isDrawPhase ? "ring-2 ring-gold/60 rounded-lg shadow-lg shadow-gold/20" : ""}`}>
+                    <HwatuCard
+                      card={state.turnState.stockCard}
+                      disabled
+                      size={isDrawPhase ? "lg" : "sm"}
+                    />
+                  </div>
                 </motion.div>
               )}
             </motion.div>
@@ -151,3 +215,4 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
     </div>
   );
 }
+

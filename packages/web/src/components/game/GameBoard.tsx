@@ -88,12 +88,6 @@ export function GameBoard({ state, showResultsBanner, onResultsBannerClick }: Ga
               index={i}
             />
           ))}
-
-          {/* Deck info */}
-          <div className="flex flex-col items-center gap-1 self-center rounded-lg bg-white/5 px-4 py-3 text-white/60">
-            <span className="text-[10px] uppercase tracking-wide">Stock</span>
-            <span className="text-lg font-bold">{state.deckSize}</span>
-          </div>
         </div>
       </div>
 

@@ -76,7 +76,7 @@ export function PlayerHand({ state, onDragStart, onDragEnd }: PlayerHandProps) {
               dragMomentum={false}
               onDragStart={() => handleDragStart(card.id, card.month)}
               onDragEnd={handleDragEnd}
-              whileDrag={{ scale: 1.1, zIndex: 50 }}
+              whileDrag={{ scale: 1.1, zIndex: 50, pointerEvents: "none" as const }}
               style={{ zIndex: 1 }}
             >
               <HwatuCard
