@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: go-stop-server
+    runtime: node
+    plan: free
+    buildCommand: pnpm install && pnpm build:shared && pnpm build:server
+    startCommand: node packages/server/dist/index.js
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: CLIENT_URL
+        sync: false
+      - key: NODE_ENV
+        value: production

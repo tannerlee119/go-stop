@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #faf7f2;
+  --color-parchment: #f0e8d8;
+  --color-ink: #2c1810;
+  --color-ink-light: #5c4033;
+  --color-gold: #c9a84c;
+  --color-gold-dark: #a07e2e;
+  --color-crimson: #b91c1c;
+  --color-crimson-dark: #8b1515;
+  --color-royal-blue: #1e3a5f;
+  --color-jade: #2d6a4f;
+  --color-jade-dark: #1b4332;
+
+  --font-sans: "Noto Sans KR", "Inter", sans-serif;
+  --font-display: "Noto Serif KR", Georgia, serif;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(201, 168, 76, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(201, 168, 76, 0.6); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.card-shadow {
+  box-shadow:
+    0 2px 8px rgba(44, 24, 16, 0.15),
+    0 1px 3px rgba(44, 24, 16, 0.1);
+}
+
+.card-shadow-hover {
+  box-shadow:
+    0 4px 16px rgba(44, 24, 16, 0.2),
+    0 2px 6px rgba(44, 24, 16, 0.15);
+}

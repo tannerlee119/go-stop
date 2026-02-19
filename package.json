@@ -1,0 +1,18 @@
+{
+  "name": "go-stop",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:server": "pnpm --filter @go-stop/server dev",
+    "dev:web": "pnpm --filter @go-stop/web dev",
+    "build": "pnpm --filter @go-stop/shared build && pnpm -r --parallel build --filter !@go-stop/shared",
+    "build:shared": "pnpm --filter @go-stop/shared build",
+    "build:server": "pnpm --filter @go-stop/server build",
+    "build:web": "pnpm --filter @go-stop/web build",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r clean"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

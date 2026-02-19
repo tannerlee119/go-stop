@@ -1,0 +1,27 @@
+{
+  "name": "@go-stop/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@go-stop/shared": "workspace:*",
+    "cors": "^2",
+    "express": "^4",
+    "nanoid": "^5",
+    "socket.io": "^4"
+  },
+  "devDependencies": {
+    "@types/cors": "^2",
+    "@types/express": "^4",
+    "@types/node": "^22",
+    "tsup": "^8",
+    "tsx": "^4",
+    "typescript": "^5"
+  }
+}
