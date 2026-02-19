@@ -78,7 +78,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       });
 
       socket.on("game:state", (state) => {
-        set({ gameState: state });
+        // If the new state is not finished, clear any stale game-over data
+        if (state.phase !== "finished") {
+          set({ gameState: state, gameOver: null, specialEvents: [] });
+        } else {
+          set({ gameState: state });
+        }
       });
 
       socket.on("game:over", (data) => {
