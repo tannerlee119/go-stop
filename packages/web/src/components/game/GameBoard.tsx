@@ -88,7 +88,11 @@ export function GameBoard({ state }: GameBoardProps) {
 
       {/* Middle area: table */}
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-3">
-        <TurnIndicator state={state} isMyTurn={isMyTurn} />
+        <TurnIndicator
+          state={state}
+          isMyTurn={isMyTurn}
+          onClick={goStopCollapsed ? () => setGoStopCollapsed(false) : undefined}
+        />
 
         {lastGoDeclaration && (
           <div className="animate-slide-up rounded-full bg-gold px-6 py-2 text-sm font-bold text-white shadow-lg">
@@ -133,17 +137,6 @@ export function GameBoard({ state }: GameBoardProps) {
 
       {showGoStop && !goStopCollapsed && (
         <GoStopModal state={state} onCollapse={() => setGoStopCollapsed(true)} />
-      )}
-
-      {showGoStop && goStopCollapsed && (
-        <button
-          onClick={() => setGoStopCollapsed(false)}
-          className="fixed bottom-28 right-6 z-40 flex items-center gap-2 rounded-full bg-gold px-5 py-3
-                   text-sm font-bold text-white shadow-lg animate-pulse
-                   transition-all hover:bg-gold-dark hover:shadow-xl active:scale-95"
-        >
-          Go / Stop?
-        </button>
       )}
     </div>
   );
