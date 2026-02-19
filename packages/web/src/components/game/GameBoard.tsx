@@ -46,30 +46,42 @@ export function GameBoard({ state, showResultsBanner, onResultsBannerClick }: Ga
 
     if (!card) return;
 
-    // Temporarily hide hand cards from hit-testing so they don't block drop targets
-    const handContainer = document.querySelector("[data-player-hand]");
-    const handEls: HTMLElement[] = [];
-    if (handContainer) {
-      handContainer.querySelectorAll<HTMLElement>("button, [style]").forEach((el) => {
-        handEls.push(el);
-        el.style.pointerEvents = "none";
-      });
+    // Use bounding-rect hit testing — much more reliable than elementsFromPoint
+    // Check each stack on the table
+    let hitMonth: Month | null = null;
+    const stackEls = document.querySelectorAll<HTMLElement>("[data-drop-month]");
+    for (const el of stackEls) {
+      const rect = el.getBoundingClientRect();
+      if (
+        pointerX >= rect.left &&
+        pointerX <= rect.right &&
+        pointerY >= rect.top &&
+        pointerY <= rect.bottom
+      ) {
+        hitMonth = Number(el.getAttribute("data-drop-month")) as Month;
+        break;
+      }
     }
 
-    const elements = document.elementsFromPoint(pointerX, pointerY);
+    // Check empty drop zone
+    if (!hitMonth) {
+      const emptyEl = document.querySelector<HTMLElement>("[data-drop-empty]");
+      if (emptyEl) {
+        const rect = emptyEl.getBoundingClientRect();
+        if (
+          pointerX >= rect.left &&
+          pointerX <= rect.right &&
+          pointerY >= rect.top &&
+          pointerY <= rect.bottom
+        ) {
+          sendAction({ type: "play-card", cardId: card.cardId });
+          return;
+        }
+      }
+    }
 
-    // Restore pointer-events immediately
-    handEls.forEach((el) => {
-      el.style.pointerEvents = "";
-    });
-
-    const stackTarget = elements.find((el) => el.hasAttribute("data-drop-month"));
-    const emptyTarget = elements.find((el) => el.hasAttribute("data-drop-empty"));
-    const boardTarget = elements.find((el) => el.hasAttribute("data-drop-board"));
-
-    if (stackTarget) {
-      const month = Number(stackTarget.getAttribute("data-drop-month")) as Month;
-      const matchingStacks = state.tableStacks.filter((s) => s.month === month);
+    if (hitMonth) {
+      const matchingStacks = state.tableStacks.filter((s) => s.month === hitMonth);
       if (matchingStacks.length === 1 && matchingStacks[0].cards.length > 0) {
         sendAction({
           type: "play-card",
@@ -79,11 +91,24 @@ export function GameBoard({ state, showResultsBanner, onResultsBannerClick }: Ga
       } else {
         sendAction({ type: "play-card", cardId: card.cardId });
       }
-    } else if (emptyTarget || boardTarget) {
-      // Drop on empty target or anywhere on the board area
-      sendAction({ type: "play-card", cardId: card.cardId });
+      return;
     }
-    // If dropped outside the board entirely (e.g. on hand area), card snaps back
+
+    // Fallback: dropped anywhere on the board area
+    const boardEl = document.querySelector<HTMLElement>("[data-drop-board]");
+    if (boardEl) {
+      const rect = boardEl.getBoundingClientRect();
+      if (
+        pointerX >= rect.left &&
+        pointerX <= rect.right &&
+        pointerY >= rect.top &&
+        pointerY <= rect.bottom
+      ) {
+        sendAction({ type: "play-card", cardId: card.cardId });
+        return;
+      }
+    }
+    // If dropped outside the board entirely, card snaps back
   }, [state.tableStacks, sendAction]);
 
   // Determine if the turn indicator should be clickable
