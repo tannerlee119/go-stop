@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { ClientGameState, Month } from "@go-stop/shared";
 import { PlayerHand } from "./PlayerHand";
 import { TableLayout } from "./TableLayout";
@@ -25,6 +25,7 @@ export function GameBoard({ state, showResultsBanner, onResultsBannerClick }: Ga
   const showGoStop = state.phase === "go-stop-decision" && isMyTurn;
 
   const [draggingCard, setDraggingCard] = useState<{ cardId: string; month: Month } | null>(null);
+  const draggingCardRef = useRef<{ cardId: string; month: Month } | null>(null);
   const [goStopCollapsed, setGoStopCollapsed] = useState(false);
 
   // Reset collapsed state whenever the go-stop decision phase ends
@@ -33,14 +34,17 @@ export function GameBoard({ state, showResultsBanner, onResultsBannerClick }: Ga
   }, [showGoStop]);
 
   const handleDragStart = useCallback((cardId: string, month: Month) => {
-    setDraggingCard({ cardId, month });
+    const card = { cardId, month };
+    draggingCardRef.current = card;
+    setDraggingCard(card);
   }, []);
 
   const handleDragEnd = useCallback((pointerX: number, pointerY: number) => {
-    if (!draggingCard) {
-      setDraggingCard(null);
-      return;
-    }
+    const card = draggingCardRef.current;
+    draggingCardRef.current = null;
+    setDraggingCard(null);
+
+    if (!card) return;
 
     // Temporarily hide hand cards from hit-testing so they don't block drop targets
     const handContainer = document.querySelector("[data-player-hand]");
@@ -69,20 +73,18 @@ export function GameBoard({ state, showResultsBanner, onResultsBannerClick }: Ga
       if (matchingStacks.length === 1 && matchingStacks[0].cards.length > 0) {
         sendAction({
           type: "play-card",
-          cardId: draggingCard.cardId,
+          cardId: card.cardId,
           targetCardId: matchingStacks[0].cards[0].id,
         });
       } else {
-        sendAction({ type: "play-card", cardId: draggingCard.cardId });
+        sendAction({ type: "play-card", cardId: card.cardId });
       }
     } else if (emptyTarget || boardTarget) {
       // Drop on empty target or anywhere on the board area
-      sendAction({ type: "play-card", cardId: draggingCard.cardId });
+      sendAction({ type: "play-card", cardId: card.cardId });
     }
     // If dropped outside the board entirely (e.g. on hand area), card snaps back
-
-    setDraggingCard(null);
-  }, [draggingCard, state.tableStacks, sendAction]);
+  }, [state.tableStacks, sendAction]);
 
   // Determine if the turn indicator should be clickable
   const turnIndicatorClick = goStopCollapsed

@@ -37,6 +37,11 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
     ? state.tableStacks.find((s) => s.cards.some((c) => c.id === handCardId))?.month ?? null
     : null;
 
+  // Triple-match (4-of-a-kind): hand card is not on any stack but captured cards exist
+  const capturedThisTurn = state.turnState.capturedThisTurn;
+  const isTripleCapture =
+    handCardId != null && handMatchMonth === null && capturedThisTurn.length > 0;
+
   // Stock card: during draw phase, find which stack it will match
   const stockCard = state.turnState.stockCard;
   const stockTargetMonth =
@@ -239,6 +244,29 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
                 className="mt-1 rounded-full bg-sky-400/20 px-2 py-0.5 text-[9px] font-bold text-sky-300"
               >
                 No match
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* Triple-match capture visualization (4-of-a-kind) */}
+          {isTripleCapture && (
+            <motion.div
+              initial={{ opacity: 1, scale: 1 }}
+              animate={{ opacity: 0.6, scale: 0.9 }}
+              transition={{ duration: 1.5, ease: "easeOut" }}
+              className="relative flex flex-col items-center rounded-lg ring-2 ring-emerald-400/70 bg-emerald-400/10 p-1"
+            >
+              <div className="flex gap-0.5">
+                {capturedThisTurn.map((card) => (
+                  <HwatuCard key={card.id} card={card} size="sm" disabled />
+                ))}
+              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-1 rounded-full bg-emerald-400/20 px-2 py-0.5 text-[9px] font-bold text-emerald-300"
+              >
+                Captured!
               </motion.div>
             </motion.div>
           )}
