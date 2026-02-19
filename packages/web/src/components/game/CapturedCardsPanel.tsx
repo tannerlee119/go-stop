@@ -57,8 +57,6 @@ function groupJunkByFive(junk: Card[]): Card[][] {
     groups.push(currentGroup);
   }
 
-  // If a row has a +2 (double-junk) and the next row is incomplete, swap the +2
-  // into the incomplete row so the last group is better filled.
   for (let i = 0; i < groups.length - 1; i++) {
     const nextGroup = groups[i + 1];
     const nextValue = nextGroup.reduce((sum, c) => sum + junkValue(c), 0);
@@ -77,44 +75,33 @@ function groupJunkByFive(junk: Card[]): Card[][] {
   return groups;
 }
 
-interface CardRowProps {
+/* ── Horizontal row of cards with a label ── */
+interface CardStripProps {
   label: string;
-  koreanLabel: string;
-  cards: Card[];
+  count: number;
   subtotal: number;
   accentColor: string;
+  cards: Card[];
   size: "xs" | "sm";
-  compact: boolean;
 }
 
-function CardRow({ label, koreanLabel, cards, subtotal, accentColor, size, compact }: CardRowProps) {
-  if (cards.length === 0 && compact) return null;
+function CardStrip({ label, count, subtotal, accentColor, cards, size }: CardStripProps) {
+  if (cards.length === 0) return null;
 
   return (
-    <div className={`flex flex-col ${compact ? "gap-0.5" : "gap-1"}`}>
+    <div className="flex flex-col gap-0.5">
       <div className="flex items-center gap-1">
-        <span className={`font-bold ${accentColor} ${compact ? "text-[9px]" : "text-[11px]"}`}>
-          {koreanLabel}
-        </span>
-        <span className={`text-white/40 ${compact ? "text-[8px]" : "text-[10px]"}`}>
-          {cards.length}
-        </span>
+        <span className={`text-[9px] font-bold ${accentColor}`}>{label}</span>
+        <span className="text-[8px] text-white/40">{count}</span>
         {subtotal > 0 && (
-          <span className={`font-bold ${accentColor} ${compact ? "text-[9px]" : "text-[11px]"}`}>
-            +{subtotal}
-          </span>
+          <span className={`text-[9px] font-bold ${accentColor}`}>+{subtotal}</span>
         )}
       </div>
-
-      {cards.length > 0 ? (
-        <div className="flex flex-wrap gap-0.5">
-          {cards.map((card) => (
-            <HwatuCard key={card.id} card={card} disabled size={size} />
-          ))}
-        </div>
-      ) : (
-        <span className={`text-white/20 ${compact ? "text-[8px]" : "text-[10px]"}`}>—</span>
-      )}
+      <div className="flex flex-wrap gap-0.5">
+        {cards.map((card) => (
+          <HwatuCard key={card.id} card={card} disabled size={size} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -126,6 +113,7 @@ export function CapturedCardsPanel({
   compact = false,
 }: CapturedCardsPanelProps) {
   const cardSize = compact ? "xs" : "sm";
+
   const totalCards =
     captured.brights.length +
     captured.animals.length +
@@ -136,93 +124,79 @@ export function CapturedCardsPanel({
 
   if (totalCards === 0) {
     return (
-      <div className={`rounded-lg bg-black/10 ${compact ? "px-2 py-1" : "px-3 py-2"}`}>
-        <p className="text-[11px] text-white/30">No captures yet</p>
+      <div className="rounded-lg bg-black/10 px-2 py-1">
+        <p className="text-[10px] text-white/30">No captures yet</p>
       </div>
     );
   }
 
   const sortedRibbons = sortRibbons(captured.ribbons);
   const junkGroups = groupJunkByFive(captured.junk);
-  const junkValue = breakdown.junkCount;
+  const junkCount = breakdown.junkCount;
 
   return (
-    <div className={`rounded-lg bg-black/15 ${compact ? "px-2 py-1.5" : "px-3 py-2"}`}>
+    <div className="flex flex-col gap-1.5">
       {/* Score header */}
-      <div className={`flex items-center gap-2 ${compact ? "mb-1" : "mb-1.5"}`}>
+      <div className="flex items-center gap-2">
         <span className={`font-bold text-gold ${compact ? "text-xs" : "text-sm"}`}>{score}</span>
-        <span className="text-[10px] text-white/40">pts</span>
+        <span className="text-[9px] text-white/40">pts</span>
         {goCount > 0 && (
-          <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">
+          <span className="rounded-full bg-gold/20 px-1.5 py-0.5 text-[9px] font-bold text-gold">
             GO ×{goCount}
           </span>
         )}
       </div>
 
-      {/* Main grid: type rows on left, junk column on right */}
-      <div className="flex gap-3">
-        {/* Left: brights, animals, ribbons rows */}
-        <div className={`flex min-w-0 flex-1 flex-col ${compact ? "gap-1" : "gap-1.5"}`}>
-          <CardRow
-            label="Brights"
-            koreanLabel="光"
-            cards={captured.brights}
-            subtotal={breakdown.brightScore}
-            accentColor="text-amber-300"
-            size={cardSize}
-            compact={compact}
-          />
-          <CardRow
-            label="Animals"
-            koreanLabel="열"
-            cards={captured.animals}
-            subtotal={breakdown.animalScore}
-            accentColor="text-emerald-300"
-            size={cardSize}
-            compact={compact}
-          />
-          <CardRow
-            label="Ribbons"
-            koreanLabel="띠"
-            cards={sortedRibbons}
-            subtotal={breakdown.ribbonScore}
-            accentColor="text-rose-300"
-            size={cardSize}
-            compact={compact}
-          />
-        </div>
+      {/* Card type strips */}
+      <CardStrip
+        label="光"
+        count={captured.brights.length}
+        subtotal={breakdown.brightScore}
+        accentColor="text-amber-300"
+        cards={captured.brights}
+        size={cardSize}
+      />
+      <CardStrip
+        label="열"
+        count={captured.animals.length}
+        subtotal={breakdown.animalScore}
+        accentColor="text-emerald-300"
+        cards={captured.animals}
+        size={cardSize}
+      />
+      <CardStrip
+        label="띠"
+        count={sortedRibbons.length}
+        subtotal={breakdown.ribbonScore}
+        accentColor="text-rose-300"
+        cards={sortedRibbons}
+        size={cardSize}
+      />
 
-        {/* Right: junk column grouped by 5 points */}
-        {captured.junk.length > 0 && (
-          <div className={`flex flex-shrink-0 flex-col items-center ${compact ? "gap-1" : "gap-1.5"}`}>
-            <div className="flex items-center gap-1">
-              <span className={`font-bold text-stone-300 ${compact ? "text-[9px]" : "text-[11px]"}`}>
-                피
-              </span>
-              <span className={`text-white/40 ${compact ? "text-[8px]" : "text-[10px]"}`}>
-                {junkValue}
-              </span>
-              {breakdown.junkScore > 0 && (
-                <span className={`font-bold text-stone-300 ${compact ? "text-[9px]" : "text-[11px]"}`}>
-                  +{breakdown.junkScore}
-                </span>
-              )}
-            </div>
-            <div className={`flex flex-col ${compact ? "gap-1" : "gap-1.5"}`}>
-              {junkGroups.map((group, groupIdx) => (
-                <div
-                  key={groupIdx}
-                  className="flex flex-wrap gap-0.5 rounded bg-black/10 p-0.5"
-                >
-                  {group.map((card) => (
-                    <HwatuCard key={card.id} card={card} disabled size={cardSize} />
-                  ))}
-                </div>
-              ))}
-            </div>
+      {/* Junk — grouped by 5 points, at the bottom */}
+      {captured.junk.length > 0 && (
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-1">
+            <span className="text-[9px] font-bold text-stone-300">피</span>
+            <span className="text-[8px] text-white/40">{junkCount}</span>
+            {breakdown.junkScore > 0 && (
+              <span className="text-[9px] font-bold text-stone-300">+{breakdown.junkScore}</span>
+            )}
           </div>
-        )}
-      </div>
+          <div className="flex flex-col gap-1">
+            {junkGroups.map((group, groupIdx) => (
+              <div
+                key={groupIdx}
+                className="flex flex-wrap gap-0.5 rounded bg-black/10 p-0.5"
+              >
+                {group.map((card) => (
+                  <HwatuCard key={card.id} card={card} disabled size={cardSize} />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

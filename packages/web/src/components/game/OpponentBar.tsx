@@ -20,35 +20,35 @@ export function OpponentBar({ player, isActive, index }: OpponentBarProps) {
 
   return (
     <div
-      className={`flex-1 rounded-lg transition-all
+      className={`rounded-lg transition-all
         ${isActive ? "bg-white/15 ring-2 ring-gold/50" : "bg-white/5"}
       `}
     >
       {/* Player header */}
-      <div className="flex items-center gap-3 px-3 pt-2 pb-1">
+      <div className="flex items-center gap-2 px-2 pt-1.5 pb-1">
         <div
-          className={`flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br ${gradient} text-sm font-bold text-white shadow`}
+          className={`flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br ${gradient} text-[10px] font-bold text-white shadow`}
         >
           {player.isBot ? "🤖" : player.name[0].toUpperCase()}
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="truncate text-sm font-medium text-white">
+          <div className="flex items-center gap-1">
+            <p className="truncate text-[11px] font-medium text-white">
               {player.name}
             </p>
             {isActive && (
-              <span className="h-2 w-2 animate-pulse rounded-full bg-gold" />
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold" />
             )}
           </div>
-          <span className="text-[11px] text-white/40">
+          <span className="text-[9px] text-white/40">
             Hand: {player.handSize}
           </span>
         </div>
       </div>
 
       {/* Opponent captured cards */}
-      <div className="px-2 pb-2">
+      <div className="px-1.5 pb-1.5">
         <CapturedCardsPanel
           captured={player.captured}
           score={player.score}

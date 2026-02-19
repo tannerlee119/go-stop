@@ -120,26 +120,12 @@ export function GameBoard({ state, showResultsBanner, onResultsBannerClick }: Ga
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-jade-dark">
-      {/* Opponents + deck */}
-      <div className="flex-shrink-0 border-b border-white/10 bg-black/20 px-4 py-3">
-        <div className="mx-auto flex max-w-6xl items-start gap-3">
-          {opponents.map((opp, i) => (
-            <OpponentBar
-              key={opp.id}
-              player={opp}
-              isActive={state.players[state.currentPlayerIndex]?.id === opp.id}
-              index={i}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Middle area: table centered, captures overlay on left */}
+      {/* Board area: captures left | table center | opponents right */}
       <div
         data-drop-board
         className="relative flex min-h-0 flex-1 items-center justify-center px-4 py-3"
       >
-        {/* Left: captures sidebar (absolute, doesn't affect centering) */}
+        {/* Left sidebar: my captures */}
         {myPlayer && (
           <div className="absolute left-4 top-4 bottom-4 flex w-52 flex-col gap-1 overflow-y-auto rounded-xl bg-black/15 px-2 py-2">
             <span className="text-[9px] font-medium uppercase tracking-wide text-white/40">
@@ -187,6 +173,20 @@ export function GameBoard({ state, showResultsBanner, onResultsBannerClick }: Ga
             draggingMonth={draggingCard?.month ?? null}
           />
         </div>
+
+        {/* Right sidebar: opponents */}
+        {opponents.length > 0 && (
+          <div className="absolute right-4 top-4 bottom-4 flex w-52 flex-col gap-2 overflow-y-auto rounded-xl bg-black/15 px-2 py-2">
+            {opponents.map((opp, i) => (
+              <OpponentBar
+                key={opp.id}
+                player={opp}
+                isActive={state.players[state.currentPlayerIndex]?.id === opp.id}
+                index={i}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* My hand */}
