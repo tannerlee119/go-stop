@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { ClientGameState, Month } from "@go-stop/shared";
 import { PlayerHand } from "./PlayerHand";
 import { TableLayout } from "./TableLayout";
@@ -23,6 +23,12 @@ export function GameBoard({ state }: GameBoardProps) {
   const showGoStop = state.phase === "go-stop-decision" && isMyTurn;
 
   const [draggingCard, setDraggingCard] = useState<{ cardId: string; month: Month } | null>(null);
+  const [goStopCollapsed, setGoStopCollapsed] = useState(false);
+
+  // Reset collapsed state whenever the go-stop decision phase ends
+  useEffect(() => {
+    if (!showGoStop) setGoStopCollapsed(false);
+  }, [showGoStop]);
 
   const handleDragStart = useCallback((cardId: string, month: Month) => {
     setDraggingCard({ cardId, month });
@@ -125,7 +131,20 @@ export function GameBoard({ state }: GameBoardProps) {
         />
       </div>
 
-      {showGoStop && <GoStopModal state={state} />}
+      {showGoStop && !goStopCollapsed && (
+        <GoStopModal state={state} onCollapse={() => setGoStopCollapsed(true)} />
+      )}
+
+      {showGoStop && goStopCollapsed && (
+        <button
+          onClick={() => setGoStopCollapsed(false)}
+          className="fixed bottom-28 right-6 z-40 flex items-center gap-2 rounded-full bg-gold px-5 py-3
+                   text-sm font-bold text-white shadow-lg animate-pulse
+                   transition-all hover:bg-gold-dark hover:shadow-xl active:scale-95"
+        >
+          Go / Stop?
+        </button>
+      )}
     </div>
   );
 }

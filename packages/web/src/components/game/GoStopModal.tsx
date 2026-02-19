@@ -6,9 +6,10 @@ import { motion } from "framer-motion";
 
 interface GoStopModalProps {
   state: ClientGameState;
+  onCollapse: () => void;
 }
 
-export function GoStopModal({ state }: GoStopModalProps) {
+export function GoStopModal({ state, onCollapse }: GoStopModalProps) {
   const { sendAction } = useGameStore();
   const myPlayer = state.players.find((p) => p.id === state.myId);
   if (!myPlayer) return null;
@@ -60,6 +61,14 @@ export function GoStopModal({ state }: GoStopModalProps) {
             {goCount >= 2 && " + double payment"}
           </p>
         )}
+
+        <button
+          onClick={onCollapse}
+          className="mt-4 w-full rounded-lg border border-ink/10 py-2.5 text-sm font-medium text-ink-light
+                   transition-all hover:bg-ink/5 active:scale-[0.98]"
+        >
+          👀 See Board
+        </button>
       </motion.div>
     </div>
   );
