@@ -119,7 +119,7 @@ export function GameBoard({ state, showResultsBanner, onResultsBannerClick }: Ga
       : undefined;
 
   return (
-    <div className="flex min-h-screen flex-col bg-jade-dark">
+    <div className="flex h-screen flex-col overflow-hidden bg-jade-dark">
       {/* Opponents + deck */}
       <div className="flex-shrink-0 border-b border-white/10 bg-black/20 px-4 py-3">
         <div className="mx-auto flex max-w-6xl items-start gap-3">
@@ -137,7 +137,7 @@ export function GameBoard({ state, showResultsBanner, onResultsBannerClick }: Ga
       {/* Middle area: table */}
       <div
         data-drop-board
-        className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-3"
+        className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-4 py-3"
       >
         <TurnIndicator
           state={state}
@@ -173,7 +173,7 @@ export function GameBoard({ state, showResultsBanner, onResultsBannerClick }: Ga
 
       {/* My captures panel */}
       <div className="flex-shrink-0 border-t border-white/10 bg-black/10 px-4 py-2">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-h-[140px] max-w-6xl overflow-y-auto">
           {myPlayer && <ScorePanel player={myPlayer} />}
         </div>
       </div>

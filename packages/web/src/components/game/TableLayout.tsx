@@ -60,7 +60,7 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
         </div>
       )}
 
-      <div className="flex items-center justify-center gap-6">
+      <div className="relative flex items-center justify-center gap-6">
         {/* ── Stock / Draw Pile ── */}
         <div className="flex flex-col items-center gap-1.5">
           <span className="text-[10px] uppercase tracking-widest text-white/40">
@@ -297,14 +297,14 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
           )}
         </div>
 
-        {/* ── Turn state info (side reference panel) ── */}
+        {/* ── Turn state info (side reference panel — absolute positioned) ── */}
         <AnimatePresence>
           {hasTurnInfo && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className="flex flex-col items-center gap-3 rounded-xl bg-black/20 px-4 py-3"
+              className="absolute right-0 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 rounded-xl bg-black/30 backdrop-blur-sm px-3 py-2 z-10"
             >
               {state.turnState.handCard && (
                 <div className="text-center">
