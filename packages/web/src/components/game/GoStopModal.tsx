@@ -67,7 +67,7 @@ export function GoStopModal({ state, onCollapse }: GoStopModalProps) {
           className="mt-4 w-full rounded-lg border border-ink/10 py-2.5 text-sm font-medium text-ink-light
                    transition-all hover:bg-ink/5 active:scale-[0.98]"
         >
-          👀 See Board
+          See Board
         </button>
       </motion.div>
     </div>
