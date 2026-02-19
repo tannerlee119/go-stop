@@ -1,41 +1,97 @@
 "use client";
 
-import type { CapturedCards, Card } from "@go-stop/shared";
+import { calculateScore } from "@go-stop/shared";
+import type { CapturedCards, Card, RibbonKind } from "@go-stop/shared";
 import { HwatuCard } from "./HwatuCard";
 
 interface CapturedCardsPanelProps {
   captured: CapturedCards;
   score: number;
   goCount: number;
-  /** Smaller layout for opponents */
   compact?: boolean;
 }
 
-interface CardGroupProps {
-  label: string;
-  cards: Card[];
-  count: number;
-  accentColor: string;
-  bgColor: string;
-  size: "xs" | "sm" | "md";
+const RIBBON_ORDER: Record<RibbonKind, number> = {
+  "red-poem": 0,
+  "blue": 1,
+  "red-plain": 2,
+  "other": 3,
+};
+
+function sortRibbons(ribbons: Card[]): Card[] {
+  return [...ribbons].sort((a, b) => {
+    const aOrder = RIBBON_ORDER[a.ribbonKind ?? "other"];
+    const bOrder = RIBBON_ORDER[b.ribbonKind ?? "other"];
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a.month - b.month;
+  });
 }
 
-function CardGroup({ label, cards, count, accentColor, bgColor, size }: CardGroupProps) {
-  if (cards.length === 0) return null;
+function groupJunkByFive(junk: Card[]): Card[][] {
+  const groups: Card[][] = [];
+  let currentGroup: Card[] = [];
+  let currentValue = 0;
+
+  const sorted = [...junk].sort((a, b) => a.month - b.month);
+
+  for (const card of sorted) {
+    const value = card.isDoubleJunk ? 2 : 1;
+    if (currentValue + value > 5 && currentGroup.length > 0) {
+      groups.push(currentGroup);
+      currentGroup = [];
+      currentValue = 0;
+    }
+    currentGroup.push(card);
+    currentValue += value;
+    if (currentValue >= 5) {
+      groups.push(currentGroup);
+      currentGroup = [];
+      currentValue = 0;
+    }
+  }
+  if (currentGroup.length > 0) {
+    groups.push(currentGroup);
+  }
+
+  return groups;
+}
+
+interface CardRowProps {
+  label: string;
+  koreanLabel: string;
+  cards: Card[];
+  subtotal: number;
+  accentColor: string;
+  size: "xs" | "sm";
+  compact: boolean;
+}
+
+function CardRow({ label, koreanLabel, cards, subtotal, accentColor, size, compact }: CardRowProps) {
+  if (cards.length === 0 && compact) return null;
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-1.5">
-        <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${bgColor} ${accentColor}`}>
-          {label}
+    <div className={`flex items-center gap-2 ${compact ? "min-h-[16px]" : "min-h-[28px]"}`}>
+      <div className={`flex w-8 flex-shrink-0 flex-col items-center ${compact ? "gap-0" : "gap-0.5"}`}>
+        <span className={`font-bold ${accentColor} ${compact ? "text-[9px]" : "text-[11px]"}`}>
+          {koreanLabel}
         </span>
-        <span className="text-[10px] text-white/40">{count}</span>
       </div>
-      <div className="flex flex-wrap gap-1">
-        {cards.map((card) => (
-          <HwatuCard key={card.id} card={card} disabled size={size} />
-        ))}
-      </div>
+
+      {cards.length > 0 ? (
+        <div className="flex flex-wrap gap-0.5">
+          {cards.map((card) => (
+            <HwatuCard key={card.id} card={card} disabled size={size} />
+          ))}
+        </div>
+      ) : (
+        <span className={`text-white/20 ${compact ? "text-[8px]" : "text-[10px]"}`}>—</span>
+      )}
+
+      {subtotal > 0 && (
+        <span className={`ml-auto flex-shrink-0 font-bold ${accentColor} ${compact ? "text-[9px]" : "text-[11px]"}`}>
+          +{subtotal}
+        </span>
+      )}
     </div>
   );
 }
@@ -53,6 +109,8 @@ export function CapturedCardsPanel({
     captured.ribbons.length +
     captured.junk.length;
 
+  const breakdown = calculateScore(captured);
+
   if (totalCards === 0) {
     return (
       <div className={`rounded-lg bg-black/10 ${compact ? "px-2 py-1" : "px-3 py-2"}`}>
@@ -61,11 +119,15 @@ export function CapturedCardsPanel({
     );
   }
 
+  const sortedRibbons = sortRibbons(captured.ribbons);
+  const junkGroups = groupJunkByFive(captured.junk);
+  const junkValue = breakdown.junkCount;
+
   return (
     <div className={`rounded-lg bg-black/15 ${compact ? "px-2 py-1.5" : "px-3 py-2"}`}>
       {/* Score header */}
-      <div className="mb-1.5 flex items-center gap-2">
-        <span className="text-sm font-bold text-gold">{score}</span>
+      <div className={`flex items-center gap-2 ${compact ? "mb-1" : "mb-1.5"}`}>
+        <span className={`font-bold text-gold ${compact ? "text-xs" : "text-sm"}`}>{score}</span>
         <span className="text-[10px] text-white/40">pts</span>
         {goCount > 0 && (
           <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">
@@ -74,40 +136,69 @@ export function CapturedCardsPanel({
         )}
       </div>
 
-      {/* Card groups */}
-      <div className={`flex flex-wrap ${compact ? "gap-3" : "gap-4"}`}>
-        <CardGroup
-          label="光"
-          cards={captured.brights}
-          count={captured.brights.length}
-          accentColor="text-amber-300"
-          bgColor="bg-amber-500/20"
-          size={cardSize}
-        />
-        <CardGroup
-          label="열"
-          cards={captured.animals}
-          count={captured.animals.length}
-          accentColor="text-emerald-300"
-          bgColor="bg-emerald-500/20"
-          size={cardSize}
-        />
-        <CardGroup
-          label="띠"
-          cards={captured.ribbons}
-          count={captured.ribbons.length}
-          accentColor="text-rose-300"
-          bgColor="bg-rose-500/20"
-          size={cardSize}
-        />
-        <CardGroup
-          label="피"
-          cards={captured.junk}
-          count={captured.junk.length}
-          accentColor="text-stone-300"
-          bgColor="bg-stone-500/20"
-          size={cardSize}
-        />
+      {/* Main grid: type rows on left, junk column on right */}
+      <div className="flex gap-3">
+        {/* Left: brights, animals, ribbons rows */}
+        <div className={`flex min-w-0 flex-1 flex-col ${compact ? "gap-1" : "gap-1.5"}`}>
+          <CardRow
+            label="Brights"
+            koreanLabel="光"
+            cards={captured.brights}
+            subtotal={breakdown.brightScore}
+            accentColor="text-amber-300"
+            size={cardSize}
+            compact={compact}
+          />
+          <CardRow
+            label="Animals"
+            koreanLabel="열"
+            cards={captured.animals}
+            subtotal={breakdown.animalScore}
+            accentColor="text-emerald-300"
+            size={cardSize}
+            compact={compact}
+          />
+          <CardRow
+            label="Ribbons"
+            koreanLabel="띠"
+            cards={sortedRibbons}
+            subtotal={breakdown.ribbonScore}
+            accentColor="text-rose-300"
+            size={cardSize}
+            compact={compact}
+          />
+        </div>
+
+        {/* Right: junk column grouped by 5 points */}
+        {captured.junk.length > 0 && (
+          <div className={`flex flex-shrink-0 flex-col items-center ${compact ? "gap-1" : "gap-1.5"}`}>
+            <div className="flex items-center gap-1">
+              <span className={`font-bold text-stone-300 ${compact ? "text-[9px]" : "text-[11px]"}`}>
+                피
+              </span>
+              <span className={`text-white/40 ${compact ? "text-[8px]" : "text-[10px]"}`}>
+                {junkValue}
+              </span>
+              {breakdown.junkScore > 0 && (
+                <span className={`font-bold text-stone-300 ${compact ? "text-[9px]" : "text-[11px]"}`}>
+                  +{breakdown.junkScore}
+                </span>
+              )}
+            </div>
+            <div className={`flex flex-col ${compact ? "gap-1" : "gap-1.5"}`}>
+              {junkGroups.map((group, groupIdx) => (
+                <div
+                  key={groupIdx}
+                  className="flex flex-wrap gap-0.5 rounded bg-black/10 p-0.5"
+                >
+                  {group.map((card) => (
+                    <HwatuCard key={card.id} card={card} disabled size={cardSize} />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

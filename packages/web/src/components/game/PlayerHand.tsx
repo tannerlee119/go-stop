@@ -1,17 +1,20 @@
 "use client";
 
-import type { ClientGameState } from "@go-stop/shared";
+import type { ClientGameState, Month } from "@go-stop/shared";
+import { motion, type PanInfo } from "framer-motion";
 import { HwatuCard } from "./HwatuCard";
 import { useGameStore } from "@/stores/game-store";
-import { useState } from "react";
+import { useRef, useCallback } from "react";
 
 interface PlayerHandProps {
   state: ClientGameState;
+  onDragStart?: (cardId: string, month: Month) => void;
+  onDragEnd?: () => void;
 }
 
-export function PlayerHand({ state }: PlayerHandProps) {
+export function PlayerHand({ state, onDragStart, onDragEnd }: PlayerHandProps) {
   const { sendAction } = useGameStore();
-  const [selectedCard, setSelectedCard] = useState<string | null>(null);
+  const dragCardRef = useRef<string | null>(null);
 
   const isMyTurn = state.players[state.currentPlayerIndex]?.id === state.myId;
   const canPlay =
@@ -24,13 +27,25 @@ export function PlayerHand({ state }: PlayerHandProps) {
   function handleCardClick(cardId: string) {
     if (!canPlay) return;
     sendAction({ type: "play-card", cardId });
-    setSelectedCard(null);
   }
 
   function handleSkip() {
     if (!canSkip) return;
     sendAction({ type: "skip-hand" });
   }
+
+  const handleDragStart = useCallback((cardId: string, month: Month) => {
+    dragCardRef.current = cardId;
+    onDragStart?.(cardId, month);
+  }, [onDragStart]);
+
+  const handleDragEnd = useCallback((_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const draggedFarEnough = Math.abs(info.offset.y) > 80;
+    if (!draggedFarEnough) {
+      dragCardRef.current = null;
+    }
+    onDragEnd?.();
+  }, [onDragEnd]);
 
   const sortedHand = [...state.myHand].sort((a, b) => a.month - b.month || a.type.localeCompare(b.type));
 
@@ -53,13 +68,23 @@ export function PlayerHand({ state }: PlayerHandProps) {
 
         <div className="flex flex-wrap justify-center gap-2">
           {sortedHand.map((card) => (
-            <HwatuCard
+            <motion.div
               key={card.id}
-              card={card}
-              onClick={() => handleCardClick(card.id)}
-              disabled={!canPlay}
-              selected={selectedCard === card.id}
-            />
+              drag={canPlay}
+              dragSnapToOrigin
+              dragElastic={0.5}
+              dragMomentum={false}
+              onDragStart={() => handleDragStart(card.id, card.month)}
+              onDragEnd={handleDragEnd}
+              whileDrag={{ scale: 1.1, zIndex: 50 }}
+              style={{ zIndex: 1 }}
+            >
+              <HwatuCard
+                card={card}
+                onClick={() => handleCardClick(card.id)}
+                disabled={!canPlay}
+              />
+            </motion.div>
           ))}
 
           {state.myHand.length === 0 && (

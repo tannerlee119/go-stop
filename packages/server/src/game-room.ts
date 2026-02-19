@@ -3,6 +3,7 @@ import {
   createGameState,
   getValidActions,
   processAction,
+  resolveDrawnStock,
   startDeal,
   toClientGameState,
   calculateScore,
@@ -203,15 +204,8 @@ export class GameRoom {
     }
 
     try {
-      const previousPhase = this.gameState.phase;
       this.gameState = processAction(this.gameState, playerId, action);
 
-      // Emit special events
-      for (const event of this.gameState.turnState.specialEvents) {
-        this.emit({ type: "special-event", event });
-      }
-
-      // Check for go declaration
       if (action.type === "go") {
         const player = this.gameState.players.find((p) => p.id === playerId)!;
         this.emit({
@@ -222,19 +216,49 @@ export class GameRoom {
         });
       }
 
-      // Check for game over
-      if (this.gameState.phase === "finished") {
-        this.handleGameOver();
-      }
-
-      this.broadcastState();
-      this.checkForBotTurn();
-
+      this.postStateUpdate();
       return { success: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       return { success: false, error: message };
     }
+  }
+
+  private stockResolveTimer: ReturnType<typeof setTimeout> | null = null;
+  private emittedEventCount = 0;
+
+  private postStateUpdate(): void {
+    if (!this.gameState) return;
+
+    const events = this.gameState.turnState.specialEvents;
+    if (events.length < this.emittedEventCount) this.emittedEventCount = 0;
+    for (let i = this.emittedEventCount; i < events.length; i++) {
+      this.emit({ type: "special-event", event: events[i] });
+    }
+    this.emittedEventCount = events.length;
+
+    if (this.gameState.phase === "finished") {
+      this.handleGameOver();
+    }
+
+    this.broadcastState();
+
+    if (this.gameState.phase === "draw-from-stock") {
+      this.scheduleStockResolve();
+    } else {
+      this.checkForBotTurn();
+    }
+  }
+
+  private scheduleStockResolve(): void {
+    if (this.stockResolveTimer) clearTimeout(this.stockResolveTimer);
+    this.stockResolveTimer = setTimeout(() => {
+      this.stockResolveTimer = null;
+      if (!this.gameState || this.gameState.phase !== "draw-from-stock") return;
+
+      this.gameState = resolveDrawnStock(this.gameState);
+      this.postStateUpdate();
+    }, 1500);
   }
 
   private handleGameOver(): void {

@@ -107,6 +107,7 @@ export interface SpecialEvent {
 export interface PlayCardAction {
   type: "play-card";
   cardId: string;
+  targetCardId?: string;
 }
 
 export interface ChooseCaptureAction {

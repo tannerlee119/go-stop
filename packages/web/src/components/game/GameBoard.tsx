@@ -1,6 +1,7 @@
 "use client";
 
-import type { ClientGameState } from "@go-stop/shared";
+import { useState, useCallback } from "react";
+import type { ClientGameState, Month } from "@go-stop/shared";
 import { PlayerHand } from "./PlayerHand";
 import { TableLayout } from "./TableLayout";
 import { OpponentBar } from "./OpponentBar";
@@ -14,12 +15,43 @@ interface GameBoardProps {
 }
 
 export function GameBoard({ state }: GameBoardProps) {
-  const { lastGoDeclaration, specialEvents } = useGameStore();
+  const { lastGoDeclaration, specialEvents, sendAction } = useGameStore();
   const myPlayer = state.players.find((p) => p.id === state.myId);
   const opponents = state.players.filter((p) => p.id !== state.myId);
   const isMyTurn =
     state.players[state.currentPlayerIndex]?.id === state.myId;
   const showGoStop = state.phase === "go-stop-decision" && isMyTurn;
+
+  const [draggingCard, setDraggingCard] = useState<{ cardId: string; month: Month } | null>(null);
+
+  const handleDragStart = useCallback((cardId: string, month: Month) => {
+    setDraggingCard({ cardId, month });
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggingCard(null);
+  }, []);
+
+  const handleDropOnStack = useCallback((month: Month) => {
+    if (!draggingCard) return;
+    const matchingStacks = state.tableStacks.filter((s) => s.month === month);
+    if (matchingStacks.length === 1 && matchingStacks[0].cards.length > 0) {
+      sendAction({
+        type: "play-card",
+        cardId: draggingCard.cardId,
+        targetCardId: matchingStacks[0].cards[0].id,
+      });
+    } else {
+      sendAction({ type: "play-card", cardId: draggingCard.cardId });
+    }
+    setDraggingCard(null);
+  }, [draggingCard, state.tableStacks, sendAction]);
+
+  const handleDropOnEmpty = useCallback(() => {
+    if (!draggingCard) return;
+    sendAction({ type: "play-card", cardId: draggingCard.cardId });
+    setDraggingCard(null);
+  }, [draggingCard, sendAction]);
 
   return (
     <div className="flex min-h-screen flex-col bg-jade-dark">
@@ -66,7 +98,12 @@ export function GameBoard({ state }: GameBoardProps) {
           </div>
         )}
 
-        <TableLayout state={state} />
+        <TableLayout
+          state={state}
+          draggingMonth={draggingCard?.month ?? null}
+          onDropOnStack={handleDropOnStack}
+          onDropOnEmpty={handleDropOnEmpty}
+        />
       </div>
 
       {/* My captures panel */}
@@ -78,7 +115,11 @@ export function GameBoard({ state }: GameBoardProps) {
 
       {/* My hand */}
       <div className="flex-shrink-0 border-t border-white/10 bg-black/30">
-        <PlayerHand state={state} />
+        <PlayerHand
+          state={state}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        />
       </div>
 
       {showGoStop && <GoStopModal state={state} />}

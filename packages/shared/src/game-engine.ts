@@ -260,7 +260,7 @@ export function processAction(state: GameState, playerId: string, action: GameAc
 
   switch (action.type) {
     case "play-card":
-      return processPlayCard(state, action.cardId);
+      return processPlayCard(state, action.cardId, action.targetCardId);
     case "choose-capture":
       return processChooseCapture(state, action.targetCardId);
     case "go":
@@ -276,7 +276,7 @@ export function processAction(state: GameState, playerId: string, action: GameAc
   }
 }
 
-function processPlayCard(state: GameState, cardId: string): GameState {
+function processPlayCard(state: GameState, cardId: string, targetCardId?: string): GameState {
   const player = currentPlayer(state);
   const cardIndex = player.hand.findIndex((c) => c.id === cardId);
   if (cardIndex === -1) throw new Error("Card not in hand");
@@ -285,7 +285,7 @@ function processPlayCard(state: GameState, cardId: string): GameState {
   const newHand = player.hand.filter((_, i) => i !== cardIndex);
   const isFirstTurn = state.turnCount < state.config.playerCount;
 
-  const result = playCardToTable(card, state.tableStacks);
+  const result = playCardToTable(card, state.tableStacks, targetCardId);
 
   if (result.needsChoice) {
     return {
@@ -302,8 +302,7 @@ function processPlayCard(state: GameState, cardId: string): GameState {
     };
   }
 
-  // Card was placed on table (paired or added), now draw from stock
-  return proceedToStockDraw({
+  return enterDrawFromStock({
     ...state,
     players: state.players.map((p) =>
       p.id === player.id ? { ...p, hand: newHand } : p,
@@ -319,13 +318,11 @@ function processPlayCard(state: GameState, cardId: string): GameState {
 }
 
 function processChooseCapture(state: GameState, targetCardId: string): GameState {
-  const player = currentPlayer(state);
-
   if (state.phase === "choose-hand-capture") {
     const card = state.turnState.handCard!;
     const result = playCardToTable(card, state.tableStacks, targetCardId);
 
-    return proceedToStockDraw({
+    return enterDrawFromStock({
       ...state,
       tableStacks: result.updatedStacks,
       turnState: {
@@ -338,6 +335,7 @@ function processChooseCapture(state: GameState, targetCardId: string): GameState
   if (state.phase === "choose-stock-capture") {
     const stockCard = state.turnState.stockCard!;
     const handCard = state.turnState.handCard!;
+    const player = currentPlayer(state);
     const result = resolveStockCard(stockCard, handCard, state.tableStacks, targetCardId);
 
     return finalizeTurn({
@@ -354,36 +352,53 @@ function processChooseCapture(state: GameState, targetCardId: string): GameState
   throw new Error("Invalid state for choose-capture");
 }
 
-function proceedToStockDraw(state: GameState): GameState {
+/**
+ * Draw a card from the stock and transition to the visible `draw-from-stock` phase.
+ * If the deck is empty, skip straight to finalizeTurn.
+ */
+function enterDrawFromStock(state: GameState): GameState {
   const drawResult = drawFromStock(state.deck);
   if (!drawResult) {
     return finalizeTurn(state);
   }
 
-  const { drawn, remaining } = drawResult;
+  return {
+    ...state,
+    phase: "draw-from-stock",
+    deck: drawResult.remaining,
+    turnState: {
+      ...state.turnState,
+      stockCard: drawResult.drawn,
+    },
+  };
+}
+
+/**
+ * Resolve the previously drawn stock card against the table.
+ * Called by the server after a delay so the client can see the drawn card.
+ */
+export function resolveDrawnStock(state: GameState): GameState {
+  if (state.phase !== "draw-from-stock") {
+    throw new Error("Not in draw-from-stock phase");
+  }
+
+  const stockCard = state.turnState.stockCard!;
   const handCard = state.turnState.handCard!;
-  const result = resolveStockCard(drawn, handCard, state.tableStacks);
+  const result = resolveStockCard(stockCard, handCard, state.tableStacks);
 
   if (result.needsChoice) {
     return {
       ...state,
       phase: "choose-stock-capture",
-      deck: remaining,
-      turnState: {
-        ...state.turnState,
-        stockCard: drawn,
-      },
     };
   }
 
   const player = currentPlayer(state);
   return finalizeTurn({
     ...state,
-    deck: remaining,
     tableStacks: result.updatedStacks,
     turnState: {
       ...state.turnState,
-      stockCard: drawn,
       capturedThisTurn: [...state.turnState.capturedThisTurn, ...result.captured],
       specialEvents: buildSpecialEvents(state, result, player.id),
       isPpuk: result.isPpuk,
@@ -572,8 +587,7 @@ function processBomb(state: GameState, month: Month): GameState {
       : p,
   );
 
-  // Now draw from stock
-  return proceedToStockDraw({
+  return enterDrawFromStock({
     ...state,
     players: updatedPlayers,
     tableStacks: updatedStacks,
@@ -596,7 +610,7 @@ function processSkipHand(state: GameState): GameState {
       : p,
   );
 
-  return proceedToStockDraw({
+  return enterDrawFromStock({
     ...state,
     players: updatedPlayers,
     turnState: {
