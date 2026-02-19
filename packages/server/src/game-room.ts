@@ -2,6 +2,7 @@ import {
   checkInitialConditions,
   createGameState,
   getValidActions,
+  maybeAdvancePastEmptyHand,
   processAction,
   resolveDrawnStock,
   startDeal,
@@ -230,6 +231,8 @@ export class GameRoom {
   private postStateUpdate(): void {
     if (!this.gameState) return;
 
+    this.gameState = maybeAdvancePastEmptyHand(this.gameState);
+
     const events = this.gameState.turnState.specialEvents;
     if (events.length < this.emittedEventCount) this.emittedEventCount = 0;
     for (let i = this.emittedEventCount; i < events.length; i++) {
@@ -308,6 +311,8 @@ export class GameRoom {
 
   private broadcastState(): void {
     if (!this.gameState) return;
+
+    this.gameState = maybeAdvancePastEmptyHand(this.gameState);
 
     for (const player of this.players) {
       const clientState = toClientGameState(this.gameState, player.id);

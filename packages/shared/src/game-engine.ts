@@ -180,6 +180,27 @@ function currentPlayer(state: GameState): Player {
 }
 
 /**
+ * If the current player has an empty hand and no valid actions in play-from-hand,
+ * advance to the next player (or end the deal if all hands are empty).
+ * Fixes the stuck state where a player is asked to play but cannot.
+ */
+export function maybeAdvancePastEmptyHand(state: GameState): GameState {
+  let s = state;
+  const playerCount = state.config.playerCount;
+  for (let i = 0; i < playerCount; i++) {
+    if (s.phase !== "play-from-hand") return s;
+    const player = currentPlayer(s);
+    if (player.hand.length > 0) return s;
+    const validActions = getValidActions(s);
+    if (validActions.length > 0) return s;
+
+    if (allHandsEmpty(s)) return endDealAsNagari(s);
+    s = advanceToNextPlayer(s);
+  }
+  return s;
+}
+
+/**
  * Get the valid actions for the current game state.
  */
 export function getValidActions(state: GameState): GameAction["type"][] {
