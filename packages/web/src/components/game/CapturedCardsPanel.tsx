@@ -27,6 +27,10 @@ function sortRibbons(ribbons: Card[]): Card[] {
   });
 }
 
+function junkValue(card: Card): number {
+  return card.isDoubleJunk ? 2 : 1;
+}
+
 function groupJunkByFive(junk: Card[]): Card[][] {
   const groups: Card[][] = [];
   let currentGroup: Card[] = [];
@@ -35,7 +39,7 @@ function groupJunkByFive(junk: Card[]): Card[][] {
   const sorted = [...junk].sort((a, b) => a.month - b.month);
 
   for (const card of sorted) {
-    const value = card.isDoubleJunk ? 2 : 1;
+    const value = junkValue(card);
     if (currentValue + value > 5 && currentGroup.length > 0) {
       groups.push(currentGroup);
       currentGroup = [];
@@ -51,6 +55,23 @@ function groupJunkByFive(junk: Card[]): Card[][] {
   }
   if (currentGroup.length > 0) {
     groups.push(currentGroup);
+  }
+
+  // If a row has a +2 (double-junk) and the next row is incomplete, swap the +2
+  // into the incomplete row so the last group is better filled.
+  for (let i = 0; i < groups.length - 1; i++) {
+    const nextGroup = groups[i + 1];
+    const nextValue = nextGroup.reduce((sum, c) => sum + junkValue(c), 0);
+    if (nextValue >= 5) continue;
+
+    const doubleIdx = groups[i].findIndex((c) => c.isDoubleJunk);
+    const singleIdx = nextGroup.findIndex((c) => !c.isDoubleJunk);
+    if (doubleIdx !== -1 && singleIdx !== -1) {
+      const doubleCard = groups[i][doubleIdx];
+      const singleCard = nextGroup[singleIdx];
+      groups[i] = groups[i].map((c, j) => (j === doubleIdx ? singleCard : c));
+      groups[i + 1] = nextGroup.map((c, j) => (j === singleIdx ? doubleCard : c));
+    }
   }
 
   return groups;
