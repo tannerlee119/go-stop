@@ -28,30 +28,35 @@ export function GameBoard({ state }: GameBoardProps) {
     setDraggingCard({ cardId, month });
   }, []);
 
-  const handleDragEnd = useCallback(() => {
-    setDraggingCard(null);
-  }, []);
+  const handleDragEnd = useCallback((pointerX: number, pointerY: number) => {
+    if (!draggingCard) {
+      setDraggingCard(null);
+      return;
+    }
 
-  const handleDropOnStack = useCallback((month: Month) => {
-    if (!draggingCard) return;
-    const matchingStacks = state.tableStacks.filter((s) => s.month === month);
-    if (matchingStacks.length === 1 && matchingStacks[0].cards.length > 0) {
-      sendAction({
-        type: "play-card",
-        cardId: draggingCard.cardId,
-        targetCardId: matchingStacks[0].cards[0].id,
-      });
-    } else {
+    const elements = document.elementsFromPoint(pointerX, pointerY);
+    const stackTarget = elements.find((el) => el.hasAttribute("data-drop-month"));
+    const emptyTarget = elements.find((el) => el.hasAttribute("data-drop-empty"));
+
+    if (stackTarget) {
+      const month = Number(stackTarget.getAttribute("data-drop-month")) as Month;
+      const matchingStacks = state.tableStacks.filter((s) => s.month === month);
+      if (matchingStacks.length === 1 && matchingStacks[0].cards.length > 0) {
+        sendAction({
+          type: "play-card",
+          cardId: draggingCard.cardId,
+          targetCardId: matchingStacks[0].cards[0].id,
+        });
+      } else {
+        sendAction({ type: "play-card", cardId: draggingCard.cardId });
+      }
+    } else if (emptyTarget) {
       sendAction({ type: "play-card", cardId: draggingCard.cardId });
     }
+    // If neither target hit, the card snaps back without playing
+
     setDraggingCard(null);
   }, [draggingCard, state.tableStacks, sendAction]);
-
-  const handleDropOnEmpty = useCallback(() => {
-    if (!draggingCard) return;
-    sendAction({ type: "play-card", cardId: draggingCard.cardId });
-    setDraggingCard(null);
-  }, [draggingCard, sendAction]);
 
   return (
     <div className="flex min-h-screen flex-col bg-jade-dark">
@@ -101,8 +106,6 @@ export function GameBoard({ state }: GameBoardProps) {
         <TableLayout
           state={state}
           draggingMonth={draggingCard?.month ?? null}
-          onDropOnStack={handleDropOnStack}
-          onDropOnEmpty={handleDropOnEmpty}
         />
       </div>
 

@@ -8,11 +8,9 @@ import { useGameStore } from "@/stores/game-store";
 interface TableLayoutProps {
   state: ClientGameState;
   draggingMonth?: Month | null;
-  onDropOnStack?: (month: Month) => void;
-  onDropOnEmpty?: () => void;
 }
 
-export function TableLayout({ state, draggingMonth, onDropOnStack, onDropOnEmpty }: TableLayoutProps) {
+export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
   const { sendAction } = useGameStore();
   const isMyTurn = state.players[state.currentPlayerIndex]?.id === state.myId;
   const needsCaptureChoice =
@@ -48,12 +46,10 @@ export function TableLayout({ state, draggingMonth, onDropOnStack, onDropOnEmpty
           return (
             <div
               key={`stack-${stack.month}`}
+              data-drop-month={stack.month}
               className={`relative flex flex-col items-center rounded-lg transition-all ${
                 isDropTarget ? "ring-2 ring-gold/70 bg-gold/10 scale-105" : ""
               }`}
-              onPointerUp={() => {
-                if (isDropTarget && onDropOnStack) onDropOnStack(stack.month);
-              }}
             >
               <div className="relative">
                 {stack.cards.map((card, cardIdx) => {
@@ -89,8 +85,8 @@ export function TableLayout({ state, draggingMonth, onDropOnStack, onDropOnEmpty
         {/* Drop zone for "no match" when dragging */}
         {isDragging && matchingMonths.length === 0 && (
           <div
+            data-drop-empty
             className="flex h-[84px] w-14 items-center justify-center rounded-lg border-2 border-dashed border-gold/50 bg-gold/10 text-[10px] text-gold/70"
-            onPointerUp={() => onDropOnEmpty?.()}
           >
             Drop
           </div>
@@ -104,8 +100,8 @@ export function TableLayout({ state, draggingMonth, onDropOnStack, onDropOnEmpty
 
         {state.tableStacks.length === 0 && isDragging && (
           <div
+            data-drop-empty
             className="flex rounded-lg border-2 border-dashed border-gold/50 bg-gold/10 px-12 py-8 text-sm text-gold/70"
-            onPointerUp={() => onDropOnEmpty?.()}
           >
             Drop here
           </div>

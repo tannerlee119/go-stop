@@ -4,17 +4,16 @@ import type { ClientGameState, Month } from "@go-stop/shared";
 import { motion, type PanInfo } from "framer-motion";
 import { HwatuCard } from "./HwatuCard";
 import { useGameStore } from "@/stores/game-store";
-import { useRef, useCallback } from "react";
+import { useCallback } from "react";
 
 interface PlayerHandProps {
   state: ClientGameState;
   onDragStart?: (cardId: string, month: Month) => void;
-  onDragEnd?: () => void;
+  onDragEnd?: (pointerX: number, pointerY: number) => void;
 }
 
 export function PlayerHand({ state, onDragStart, onDragEnd }: PlayerHandProps) {
   const { sendAction } = useGameStore();
-  const dragCardRef = useRef<string | null>(null);
 
   const isMyTurn = state.players[state.currentPlayerIndex]?.id === state.myId;
   const canPlay =
@@ -35,16 +34,11 @@ export function PlayerHand({ state, onDragStart, onDragEnd }: PlayerHandProps) {
   }
 
   const handleDragStart = useCallback((cardId: string, month: Month) => {
-    dragCardRef.current = cardId;
     onDragStart?.(cardId, month);
   }, [onDragStart]);
 
   const handleDragEnd = useCallback((_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const draggedFarEnough = Math.abs(info.offset.y) > 80;
-    if (!draggedFarEnough) {
-      dragCardRef.current = null;
-    }
-    onDragEnd?.();
+    onDragEnd?.(info.point.x, info.point.y);
   }, [onDragEnd]);
 
   const sortedHand = [...state.myHand].sort((a, b) => a.month - b.month || a.type.localeCompare(b.type));
