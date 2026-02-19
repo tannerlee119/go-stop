@@ -1,7 +1,7 @@
 "use client";
 
 import type { ClientGameState, Month } from "@go-stop/shared";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { HwatuCard } from "./HwatuCard";
 import { useGameStore } from "@/stores/game-store";
 
@@ -28,7 +28,7 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
     ? state.tableStacks.filter((s) => s.month === draggingMonth).map((s) => s.month)
     : [];
 
-  const hasTurnInfo = !!(state.turnState.handCard || state.turnState.stockCard);
+
 
   // ── Match detection for highlights ──
   // Hand card: find which stack it landed on (the engine places it there)
@@ -297,45 +297,7 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
           )}
         </div>
 
-        {/* ── Turn state info (side reference panel — absolute positioned) ── */}
-        <AnimatePresence>
-          {hasTurnInfo && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="absolute right-0 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 rounded-xl bg-black/30 backdrop-blur-sm px-3 py-2 z-10"
-            >
-              {state.turnState.handCard && (
-                <div className="text-center">
-                  <p className="mb-1 text-[10px] text-gold/70">Played</p>
-                  <div className="rounded-md ring-1 ring-gold/40">
-                    <HwatuCard card={state.turnState.handCard} disabled size="sm" />
-                  </div>
-                </div>
-              )}
-              {state.turnState.stockCard && (
-                <motion.div
-                  initial={{ opacity: 0, x: -40, scale: 0.5, rotateY: 180 }}
-                  animate={{ opacity: 1, x: 0, scale: 1, rotateY: 0 }}
-                  transition={{ type: "spring", stiffness: 120, damping: 16, mass: 0.8 }}
-                  className="text-center"
-                >
-                  <p className={`mb-1 text-[10px] font-medium ${isDrawPhase ? "text-sky-300 animate-pulse" : "text-white/50"}`}>
-                    {isDrawPhase ? "Stock Draw!" : "Drawn"}
-                  </p>
-                  <div className={`rounded-md transition-all duration-300 ${isDrawPhase ? "ring-1 ring-sky-400/60" : ""}`}>
-                    <HwatuCard
-                      card={state.turnState.stockCard}
-                      disabled
-                      size="sm"
-                    />
-                  </div>
-                </motion.div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+
       </div>
     </div>
   );
