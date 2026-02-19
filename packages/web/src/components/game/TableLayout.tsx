@@ -30,6 +30,20 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
 
   const hasTurnInfo = !!(state.turnState.handCard || state.turnState.stockCard);
 
+  // ── Match detection for highlights ──
+  // Hand card: find which stack it landed on (the engine places it there)
+  const handCardId = state.turnState.handCard?.id;
+  const handMatchMonth = handCardId
+    ? state.tableStacks.find((s) => s.cards.some((c) => c.id === handCardId))?.month ?? null
+    : null;
+
+  // Stock card: during draw phase, find which stack it will match
+  const stockCard = state.turnState.stockCard;
+  const stockTargetMonth =
+    isDrawPhase && stockCard
+      ? state.tableStacks.find((s) => s.month === stockCard.month)?.month ?? null
+      : null;
+
   return (
     <div className="w-full max-w-5xl">
       {/* Capture choice hint */}
@@ -98,40 +112,106 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
         <div className="flex flex-wrap items-center justify-center gap-3">
           {state.tableStacks.map((stack) => {
             const isDropTarget = matchingMonths.includes(stack.month);
+            const isHandMatch = handMatchMonth === stack.month;
+            const isStockTarget = stockTargetMonth === stack.month;
+
+            // Build highlight classes
+            let highlightClasses = "";
+            if (isDropTarget) {
+              highlightClasses = "ring-2 ring-gold/70 bg-gold/10 scale-105";
+            } else if (isStockTarget) {
+              highlightClasses = "ring-2 ring-sky-400/70 bg-sky-400/10 scale-[1.03]";
+            } else if (isHandMatch) {
+              highlightClasses = "ring-2 ring-gold/50 bg-gold/5";
+            }
+
             return (
               <div
                 key={`stack-${stack.month}`}
                 data-drop-month={stack.month}
-                className={`relative flex flex-col items-center rounded-lg transition-all ${isDropTarget ? "ring-2 ring-gold/70 bg-gold/10 scale-105" : ""
-                  }`}
+                className={`relative flex flex-col items-center rounded-lg transition-all duration-300 ${highlightClasses}`}
               >
                 <div className="relative">
                   {stack.cards.map((card, cardIdx) => {
                     const isChoice = state.captureChoices.some(
                       (c) => c.id === card.id,
                     );
+                    const isTheHandCard = card.id === handCardId;
                     return (
                       <div
                         key={card.id}
                         className={cardIdx > 0 ? "-mt-[72px]" : ""}
                         style={{ zIndex: cardIdx }}
                       >
-                        <HwatuCard
-                          card={card}
-                          size="lg"
-                          onClick={() => handleTableCardClick(card.id)}
-                          disabled={!isChoice}
-                          highlighted={isChoice}
-                        />
+                        {isTheHandCard ? (
+                          <motion.div
+                            initial={{ opacity: 0, y: -30, scale: 0.8 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                          >
+                            <HwatuCard
+                              card={card}
+                              size="lg"
+                              onClick={() => handleTableCardClick(card.id)}
+                              disabled={!isChoice}
+                              highlighted={isChoice}
+                            />
+                          </motion.div>
+                        ) : (
+                          <HwatuCard
+                            card={card}
+                            size="lg"
+                            onClick={() => handleTableCardClick(card.id)}
+                            disabled={!isChoice}
+                            highlighted={isChoice}
+                          />
+                        )}
                       </div>
                     );
                   })}
+
+                  {/* Stock card preview on target stack */}
+                  {isStockTarget && stockCard && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -40, scale: 0.6, rotateY: 180 }}
+                      animate={{ opacity: 1, y: 0, scale: 1, rotateY: 0 }}
+                      transition={{ type: "spring", stiffness: 130, damping: 14, delay: 0.3 }}
+                      className="-mt-[72px] relative"
+                      style={{ zIndex: stack.cards.length }}
+                    >
+                      <div className="rounded-md ring-2 ring-sky-400 shadow-lg shadow-sky-400/30">
+                        <HwatuCard card={stockCard} size="lg" disabled />
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
 
+                {/* Stack count badge */}
                 {stack.cards.length > 1 && (
                   <div className="absolute -top-1 -right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-crimson text-[10px] font-bold text-white shadow">
                     {stack.cards.length}
                   </div>
+                )}
+
+                {/* Match label */}
+                {isHandMatch && !isStockTarget && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-1 rounded-full bg-gold/20 px-2 py-0.5 text-[9px] font-bold text-gold"
+                  >
+                    Played
+                  </motion.div>
+                )}
+                {isStockTarget && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="mt-1 rounded-full bg-sky-400/20 px-2 py-0.5 text-[9px] font-bold text-sky-300"
+                  >
+                    Stock →
+                  </motion.div>
                 )}
               </div>
             );
@@ -163,7 +243,7 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
           )}
         </div>
 
-        {/* ── Turn state info — played / drawn cards ── */}
+        {/* ── Turn state info (side reference panel) ── */}
         <AnimatePresence>
           {hasTurnInfo && (
             <motion.div
@@ -174,36 +254,27 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
             >
               {state.turnState.handCard && (
                 <div className="text-center">
-                  <p className="mb-1 text-[10px] text-white/50">Played</p>
-                  <HwatuCard card={state.turnState.handCard} disabled size="sm" />
+                  <p className="mb-1 text-[10px] text-gold/70">Played</p>
+                  <div className="rounded-md ring-1 ring-gold/40">
+                    <HwatuCard card={state.turnState.handCard} disabled size="sm" />
+                  </div>
                 </div>
               )}
               {state.turnState.stockCard && (
                 <motion.div
-                  initial={{ opacity: 0, x: -80, y: 0, scale: 0.5, rotateY: 180 }}
-                  animate={{
-                    opacity: 1,
-                    x: 0,
-                    y: 0,
-                    scale: isDrawPhase ? 1.15 : 1,
-                    rotateY: 0,
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 120,
-                    damping: 16,
-                    mass: 0.8,
-                  }}
+                  initial={{ opacity: 0, x: -40, scale: 0.5, rotateY: 180 }}
+                  animate={{ opacity: 1, x: 0, scale: 1, rotateY: 0 }}
+                  transition={{ type: "spring", stiffness: 120, damping: 16, mass: 0.8 }}
                   className="text-center"
                 >
-                  <p className={`mb-1 text-[10px] font-medium ${isDrawPhase ? "text-gold animate-pulse" : "text-white/50"}`}>
+                  <p className={`mb-1 text-[10px] font-medium ${isDrawPhase ? "text-sky-300 animate-pulse" : "text-white/50"}`}>
                     {isDrawPhase ? "Stock Draw!" : "Drawn"}
                   </p>
-                  <div className={`transition-all duration-300 ${isDrawPhase ? "ring-2 ring-gold/60 rounded-lg shadow-lg shadow-gold/20" : ""}`}>
+                  <div className={`rounded-md transition-all duration-300 ${isDrawPhase ? "ring-1 ring-sky-400/60" : ""}`}>
                     <HwatuCard
                       card={state.turnState.stockCard}
                       disabled
-                      size={isDrawPhase ? "lg" : "sm"}
+                      size="sm"
                     />
                   </div>
                 </motion.div>
