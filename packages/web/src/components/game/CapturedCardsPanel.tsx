@@ -91,11 +91,19 @@ function CardRow({ label, koreanLabel, cards, subtotal, accentColor, size, compa
   if (cards.length === 0 && compact) return null;
 
   return (
-    <div className={`flex items-center gap-2 ${compact ? "min-h-[16px]" : "min-h-[28px]"}`}>
-      <div className={`flex w-8 flex-shrink-0 flex-col items-center ${compact ? "gap-0" : "gap-0.5"}`}>
+    <div className={`flex flex-col ${compact ? "gap-0.5" : "gap-1"}`}>
+      <div className="flex items-center gap-1">
         <span className={`font-bold ${accentColor} ${compact ? "text-[9px]" : "text-[11px]"}`}>
           {koreanLabel}
         </span>
+        <span className={`text-white/40 ${compact ? "text-[8px]" : "text-[10px]"}`}>
+          {cards.length}
+        </span>
+        {subtotal > 0 && (
+          <span className={`font-bold ${accentColor} ${compact ? "text-[9px]" : "text-[11px]"}`}>
+            +{subtotal}
+          </span>
+        )}
       </div>
 
       {cards.length > 0 ? (
@@ -106,12 +114,6 @@ function CardRow({ label, koreanLabel, cards, subtotal, accentColor, size, compa
         </div>
       ) : (
         <span className={`text-white/20 ${compact ? "text-[8px]" : "text-[10px]"}`}>—</span>
-      )}
-
-      {subtotal > 0 && (
-        <span className={`ml-auto flex-shrink-0 font-bold ${accentColor} ${compact ? "text-[9px]" : "text-[11px]"}`}>
-          +{subtotal}
-        </span>
       )}
     </div>
   );
