@@ -217,6 +217,28 @@ export function TableLayout({ state, draggingMonth }: TableLayoutProps) {
             );
           })}
 
+          {/* Stock card placed on board when no match */}
+          {isDrawPhase && stockCard && stockTargetMonth === null && (
+            <motion.div
+              initial={{ opacity: 0, y: -40, scale: 0.6, rotateY: 180 }}
+              animate={{ opacity: 1, y: 0, scale: 1, rotateY: 0 }}
+              transition={{ type: "spring", stiffness: 130, damping: 14, delay: 0.3 }}
+              className="relative flex flex-col items-center rounded-lg ring-2 ring-sky-400/50 bg-sky-400/5"
+            >
+              <div className="rounded-md ring-2 ring-sky-400 shadow-lg shadow-sky-400/30">
+                <HwatuCard card={stockCard} size="lg" disabled />
+              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="mt-1 rounded-full bg-sky-400/20 px-2 py-0.5 text-[9px] font-bold text-sky-300"
+              >
+                No match
+              </motion.div>
+            </motion.div>
+          )}
+
           {/* Drop zone for "no match" when dragging */}
           {isDragging && matchingMonths.length === 0 && (
             <div
