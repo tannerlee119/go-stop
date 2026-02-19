@@ -66,7 +66,7 @@ export function PlayerHand({ state, onDragStart, onDragEnd }: PlayerHandProps) {
           )}
         </div>
 
-        <div className="flex flex-wrap justify-center gap-2">
+        <div data-player-hand className="flex flex-wrap justify-center gap-2">
           {sortedHand.map((card) => (
             <motion.div
               key={card.id}
@@ -76,7 +76,7 @@ export function PlayerHand({ state, onDragStart, onDragEnd }: PlayerHandProps) {
               dragMomentum={false}
               onDragStart={() => handleDragStart(card.id, card.month)}
               onDragEnd={handleDragEnd}
-              whileDrag={{ scale: 1.1, zIndex: 50, pointerEvents: "none" as const }}
+              whileDrag={{ scale: 1.1, zIndex: 50 }}
               style={{ zIndex: 1 }}
             >
               <HwatuCard

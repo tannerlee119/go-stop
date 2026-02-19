@@ -42,7 +42,23 @@ export function GameBoard({ state, showResultsBanner, onResultsBannerClick }: Ga
       return;
     }
 
+    // Temporarily hide hand cards from hit-testing so they don't block drop targets
+    const handContainer = document.querySelector("[data-player-hand]");
+    const handEls: HTMLElement[] = [];
+    if (handContainer) {
+      handContainer.querySelectorAll<HTMLElement>("button, [style]").forEach((el) => {
+        handEls.push(el);
+        el.style.pointerEvents = "none";
+      });
+    }
+
     const elements = document.elementsFromPoint(pointerX, pointerY);
+
+    // Restore pointer-events immediately
+    handEls.forEach((el) => {
+      el.style.pointerEvents = "";
+    });
+
     const stackTarget = elements.find((el) => el.hasAttribute("data-drop-month"));
     const emptyTarget = elements.find((el) => el.hasAttribute("data-drop-empty"));
     const boardTarget = elements.find((el) => el.hasAttribute("data-drop-board"));
